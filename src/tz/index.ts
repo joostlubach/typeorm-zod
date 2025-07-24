@@ -2,7 +2,7 @@
 export * from './basic'
 export * from './mixin'
 export * from './primary'
-export * from './relationships'
+export * from './relations'
 // /index
 
 export { type ColumnType } from './column'

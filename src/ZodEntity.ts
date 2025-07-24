@@ -1,7 +1,9 @@
-import { Entity, EntityOptions } from 'typeorm'
+import { BeforeInsert, BeforeUpdate, Entity, EntityOptions } from 'typeorm'
 import { objectEntries } from 'ytil'
 import { z } from 'zod'
 
+import { ZodValidationError } from './ZodValidationError'
+import config from './config'
 import { symbols } from './symbols'
 
 export function ZodEntity(name: string, schema: z.ZodObject, options?: EntityOptions): ClassDecorator
@@ -21,6 +23,20 @@ export function ZodEntity(...args: any[]): ClassDecorator {
     } else {
       Entity(options)(target)
     }
+
+    // Use BeforeInsert and BeforeUpdate to run validation.
+    BeforeInsert()(target.prototype, symbols.validate)
+    BeforeUpdate()(target.prototype, symbols.validate)
+
+    Object.defineProperty(target.prototype, symbols.validate, {
+      value: function () {
+        const result = schema.safeParse(this)
+        if (result.success) { return }
+
+        const error = new ZodValidationError(this, result.error.issues)
+        throw config.transformError(error)
+      }
+    })
 
     // Run through all types in the schema and run their decorators.
     for (const entry of objectEntries(schema.def.shape)) {
