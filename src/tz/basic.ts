@@ -1,29 +1,43 @@
-import { Column } from 'typeorm'
+import { Column, ColumnOptions } from 'typeorm'
 import { z } from 'zod'
 
 import { symbols } from '../symbols'
-import { createColumnType } from './column'
+import { wrapColumnType } from './column'
 
 export function string() {
   const type = z.string().meta({
-    [symbols.decorator]: Column('varchar')
+    [symbols.decoratorFactory]: columnDecorator,
+    [symbols.decoratorFactoryArgs]: {
+      [symbols.decoratorFactoryColumnOptionsArg]: {type: 'varchar'}
+    },
   })
 
-  return createColumnType(type)
+  return wrapColumnType(type)
 }
 
 export function int() {
   const type = z.int().meta({
-    [symbols.decorator]: Column('int')
+    [symbols.decoratorFactory]: columnDecorator,
+    [symbols.decoratorFactoryArgs]: {
+      [symbols.decoratorFactoryColumnOptionsArg]: {type: 'int'}
+    },
   })
 
-  return createColumnType(type)
+  return wrapColumnType(type)
 }
 
 export function json<T>(base: z.ZodType<T>) {
   const type = base.meta({
-    [symbols.decorator]: Column('json')
+    [symbols.decoratorFactory]: columnDecorator,
+    [symbols.decoratorFactoryArgs]: {
+      [symbols.decoratorFactoryColumnOptionsArg]: {type: 'json'}
+    },
   })
 
-  return createColumnType(type)
+  return wrapColumnType(type)
+}
+
+function columnDecorator(args: any) {
+  const columnOptions = (args[symbols.decoratorFactoryColumnOptionsArg] ?? {}) as ColumnOptions
+  return Column(columnOptions)
 }

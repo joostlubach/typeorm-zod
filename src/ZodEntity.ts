@@ -4,7 +4,9 @@ import { z } from 'zod'
 
 import { ZodValidationError } from './ZodValidationError'
 import config from './config'
+import { insertSchema, updateSchema } from './field-types'
 import { symbols } from './symbols'
+import { findMeta } from './util'
 
 export function ZodEntity(name: string, schema: z.ZodObject, options?: EntityOptions): ClassDecorator
 export function ZodEntity(schema: z.ZodObject, options?: EntityOptions): ClassDecorator
@@ -30,7 +32,7 @@ export function ZodEntity(...args: any[]): ClassDecorator {
 
     Object.defineProperty(target.prototype, symbols.validateInsert, {
       value: function () {
-        const result = withoutOptionalForInsert(schema).safeParse(this)
+        const result = insertSchema(schema).safeParse(this)
         if (result.success) {
           Object.assign(this, result.data)
         } else {
@@ -42,7 +44,7 @@ export function ZodEntity(...args: any[]): ClassDecorator {
 
     Object.defineProperty(target.prototype, symbols.validateUpdate, {
       value: function () {
-        const result = schema.safeParse(this)
+        const result = updateSchema(schema).safeParse(this)
         if (result.success) {
           Object.assign(this, result.data)
         } else {
@@ -57,25 +59,17 @@ export function ZodEntity(...args: any[]): ClassDecorator {
       const propertyName = entry[0]
       const type = entry[1] as z.ZodType
 
-      const meta = (type.meta() ?? {}) as Record<string, any>
-      if (symbols.decorator in meta && meta[symbols.decorator] != null) {
-        meta[symbols.decorator](target.prototype, propertyName)
-      }
-      if (symbols.onAttach in meta && meta[symbols.onAttach] != null) {
-        meta[symbols.onAttach](target.prototype, propertyName)
-      }
+      const decorator = createFieldDecorator(type, propertyName)
+      decorator?.(target.prototype, propertyName)
     }
 
   }
 }
 
-function withoutOptionalForInsert(schema: z.ZodObject): z.ZodObject {
-  // Create a new schema without the generated fields.
-  const shape = Object.fromEntries(
-    objectEntries(schema.shape).filter(([key, value]) => {
-      const meta = value.meta() ?? {}
-      return meta[symbols.insert] !== false
-    })
-  )
-  return z.object(shape)
+function createFieldDecorator(type: z.ZodType, _propertyName: string): PropertyDecorator | null {
+  const factory = findMeta<(args: any) => PropertyDecorator>(type, symbols.decoratorFactory)
+  if (factory == null) { return null }
+
+  const args = findMeta<any>(type, symbols.decoratorFactoryArgs) ?? {}
+  return factory(args)
 }
