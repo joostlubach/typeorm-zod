@@ -24,7 +24,8 @@ function generated(this: PrimaryColumnType<any>, ...args: any[]): z.ZodType<numb
   const options = args.shift() ?? {}
 
   return this.meta({
-    [symbols.decorator]: PrimaryGeneratedColumn(strategy, options)
+    [symbols.decorator]: PrimaryGeneratedColumn(strategy, options),
+    [symbols.insert]: false
   })
 }
 

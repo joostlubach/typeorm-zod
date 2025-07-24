@@ -25,16 +25,30 @@ export function ZodEntity(...args: any[]): ClassDecorator {
     }
 
     // Use BeforeInsert and BeforeUpdate to run validation.
-    BeforeInsert()(target.prototype, symbols.validate)
-    BeforeUpdate()(target.prototype, symbols.validate)
+    BeforeInsert()(target.prototype, symbols.validateInsert)
+    BeforeUpdate()(target.prototype, symbols.validateUpdate)
 
-    Object.defineProperty(target.prototype, symbols.validate, {
+    Object.defineProperty(target.prototype, symbols.validateInsert, {
+      value: function () {
+        const result = withoutOptionalForInsert(schema).safeParse(this)
+        if (result.success) {
+          Object.assign(this, result.data)
+        } else {
+          const error = new ZodValidationError(this, result.error.issues)
+          throw config.transformError(error)
+        }
+      }
+    })
+
+    Object.defineProperty(target.prototype, symbols.validateUpdate, {
       value: function () {
         const result = schema.safeParse(this)
-        if (result.success) { return }
-
-        const error = new ZodValidationError(this, result.error.issues)
-        throw config.transformError(error)
+        if (result.success) {
+          Object.assign(this, result.data)
+        } else {
+          const error = new ZodValidationError(this, result.error.issues)
+          throw config.transformError(error)
+        }
       }
     })
 
@@ -53,4 +67,15 @@ export function ZodEntity(...args: any[]): ClassDecorator {
     }
 
   }
+}
+
+function withoutOptionalForInsert(schema: z.ZodObject): z.ZodObject {
+  // Create a new schema without the generated fields.
+  const shape = Object.fromEntries(
+    objectEntries(schema.shape).filter(([key, value]) => {
+      const meta = value.meta() ?? {}
+      return meta[symbols.insert] !== false
+    })
+  )
+  return z.object(shape)
 }
