@@ -22,27 +22,19 @@ export function modifySchema(schema: z.ZodObject, modifier: (type: z.ZodType, ke
 }
 
 export function findMeta<T>(type: z.ZodType, key: string): T | undefined {
-  let current = type
+  let current: z.ZodType | undefined = type
   while (current != null) {
     const meta = current.meta()
     if (meta != null && key in meta) {
       return meta[key] as T
     }
-    current = 'unwrap' in current && isFunction(current.unwrap) ? current.unwrap() : undefined
+    if ('unwrap' in current && isFunction(current.unwrap)) {
+      current = current.unwrap()
+    } else if (current._zod.parent != null && 'meta' in current._zod.parent && isFunction(current._zod.parent.meta)) {
+      current = current._zod.parent as z.ZodType
+    } else {
+      current = undefined
+    }
   }
   return undefined
-}
-
-export function collectMeta<T>(type: z.ZodType, key: string): T[] {
-  const result: T[] = []
-  let current = type
-
-  while (current != null) {
-    const meta = current.meta()
-    if (meta != null && key in meta) {
-      result.push(meta[key] as T)
-    }
-    current = (current as any)._def?.innerType
-  }
-  return result.reverse()
 }

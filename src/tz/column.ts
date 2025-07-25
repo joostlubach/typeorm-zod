@@ -1,8 +1,51 @@
-import { ColumnOptions } from 'typeorm'
+import { Column, ColumnOptions } from 'typeorm'
 import { z } from 'zod'
 
 import { symbols } from '../symbols'
-import { findMeta } from '../util'
+
+export function createColumnType<T extends z.ZodType<any>, Mod extends Record<string, ColumnTypeModifier<T, any>>>(
+  base: T,
+  columnOptions: ColumnOptions,
+  modifiers: Mod
+): T & Mod & ColumnTypeModifiers {
+  const type = base.meta({
+    [symbols.decoratorFactory]: columnDecorator,
+    [symbols.decoratorFactoryState]: {
+      [symbols.decoratorFactoryColumnOptions]: columnOptions
+    }
+  })
+
+  Object.assign(type, modifiers)
+  return wrapColumnType(type as T & Mod)
+}
+
+export function modifyColumnType<T extends z.ZodType<any>, U extends z.ZodType<any>>(
+  base: T,
+  modifier?: (type: T) => U,
+  appendOptions?: (upstream: ColumnOptions) => ColumnOptions
+): U & ColumnTypeModifiers {
+  const upstream = base.meta() ?? {}
+  const upstreamState: Record<string, any> = upstream[symbols.decoratorFactoryState] ?? {}
+
+  let type: z.ZodType = base
+  if (modifier != null) {
+    type = modifier(type as T)
+  }
+  if (appendOptions != null) {
+    type = type.meta({
+      ...upstream,
+      [symbols.decoratorFactoryState]: {
+        ...upstreamState,
+        [symbols.decoratorFactoryColumnOptions]: {
+          ...upstreamState[symbols.decoratorFactoryColumnOptions],
+          ...appendOptions(upstream[symbols.decoratorFactoryColumnOptions] ?? {})
+        }
+      }
+    })
+  }
+
+  return wrapColumnType(type as U)
+}
 
 export function wrapColumnType<T extends z.ZodType<any>>(type: T): T & ColumnTypeModifiers {
   Object.assign(type, {
@@ -14,51 +57,42 @@ export function wrapColumnType<T extends z.ZodType<any>>(type: T): T & ColumnTyp
   return type as T & ColumnTypeModifiers
 }
 
-export function transformer<T extends z.ZodType<any>, Out>(this: T, transformer: ColumnTransformer<Out, z.output<T>>): z.ZodType<Out> {
-  const upstream = findMeta<ColumnOptions>(this, symbols.decoratorFactoryArgs) ?? {}
-  return this.meta({
-    [symbols.decoratorFactoryArgs]: {
-      ...upstream,
-      transformer
-    }
-  })
+function transformer<T extends z.ZodType<any>, Out>(this: T, transformer: ColumnTransformer<Out, z.output<T>>): z.ZodType<Out> {
+  return modifyColumnType(
+    this,
+    base => base,
+    options => ({...options, transformer})
+  )
 }
 
 export function optional<T extends z.ZodType<any>>(this: T, orig_optional: any): z.ZodType<z.output<T> | undefined> {
-  const upstream = findMeta<any>(this, symbols.decoratorFactoryArgs) ?? {}
-  const type = orig_optional.call(this).meta({
-    [symbols.decoratorFactoryArgs]: {
-      ...upstream,
-      [symbols.decoratorFactoryColumnOptionsArg]: {
-        ...upstream[symbols.decoratorFactoryColumnOptionsArg],
-        nullable: true,
-      }
-    }
-  })
-
-  return wrapColumnType(type)
+  return modifyColumnType(
+    this,
+    base => orig_optional.call(base),
+    options => ({...options, nullable: true})
+  )
 }
 
 export function nullable<T extends z.ZodType<any>>(this: T, orig_nullable: any): z.ZodType<z.output<T> | null> {
-  const upstream = findMeta<any>(this, symbols.decoratorFactoryArgs) ?? {}
-  const type = orig_nullable.call(this).meta({
-    [symbols.decoratorFactoryArgs]: {
-      ...upstream,
-      [symbols.decoratorFactoryColumnOptionsArg]: {
-        ...upstream[symbols.decoratorFactoryColumnOptionsArg],
-        nullable: true,
-      }
-    }
-  })
-
-  return wrapColumnType(type)
+  return modifyColumnType(
+    this,
+    base => orig_nullable.call(base),
+    options => ({...options, nullable: true})
+  )
 }
 
 export interface ColumnTypeModifiers {
   transformer: typeof transformer
 }
 
+function columnDecorator(args: any) {
+  const columnOptions = (args[symbols.decoratorFactoryColumnOptions] ?? {}) as ColumnOptions
+  return Column(columnOptions)
+}
+
 export interface ColumnTransformer<T, Raw> {
   to: (value: T) => Raw
   from: (raw: Raw) => T
 }
+
+export type ColumnTypeModifier<T extends z.ZodType, A extends any[]> = (this: T, ...args: A) => z.ZodType<any>

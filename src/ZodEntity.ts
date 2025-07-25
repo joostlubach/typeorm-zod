@@ -67,9 +67,9 @@ export function ZodEntity(...args: any[]): ClassDecorator {
 }
 
 function createFieldDecorator(type: z.ZodType, _propertyName: string): PropertyDecorator | null {
-  const factory = findMeta<(args: any) => PropertyDecorator>(type, symbols.decoratorFactory)
+  const factory =findMeta<(args: any) => PropertyDecorator>(type, symbols.decoratorFactory)
   if (factory == null) { return null }
 
-  const args = findMeta<any>(type, symbols.decoratorFactoryArgs) ?? {}
+  const args = findMeta<any>(type, symbols.decoratorFactoryState) ?? {}
   return factory(args)
 }

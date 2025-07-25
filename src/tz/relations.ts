@@ -4,7 +4,6 @@ import { z } from 'zod'
 
 import { FieldType } from '../field-types'
 import { symbols } from '../symbols'
-import { findMeta } from '../util'
 import { ColumnTypeModifiers, wrapColumnType } from './column'
 
 export function manyToOne<T extends z.ZodType<any>>(
@@ -24,8 +23,8 @@ export function manyToOne(...args: any[]) {
   const type = z.object().meta({
     [symbols.fieldType]: FieldType.Relation,
     [symbols.decoratorFactory]: manyToOneDecorator,
-    [symbols.decoratorFactoryArgs]: {
-      [symbols.decoratorFactoryColumnOptionsArg]: {},
+    [symbols.decoratorFactoryState]: {
+      [symbols.decoratorFactoryColumnOptions]: {},
       entity, inverseSide, options,
     },
   })
@@ -40,8 +39,8 @@ export function manyToOne(...args: any[]) {
 export function foreignKey(relationshipName: string, options?: Omit<JoinColumnOptions, 'name'>) {
   const type = z.int().positive().meta({
     [symbols.decoratorFactory]: foreignKeyDecorator,
-    [symbols.decoratorFactoryArgs]: {
-      [symbols.decoratorFactoryColumnOptionsArg]: {type: 'int'},
+    [symbols.decoratorFactoryState]: {
+      [symbols.decoratorFactoryColumnOptions]: {type: 'int'},
       relationshipName,
       options,
     },
@@ -51,10 +50,11 @@ export function foreignKey(relationshipName: string, options?: Omit<JoinColumnOp
 }
 
 function cascade<T extends z.ZodType<T>>(this: T): T {
-  const upstream = findMeta<{options?: ManyToOneOptions}>(this, symbols.decoratorFactoryArgs) ?? {}
+  const meta = this.meta() ?? {}
+  const upstream = (meta[symbols.decoratorFactoryState] ?? {}) as Record<string, any>
 
   const type = this.meta({
-    [symbols.decoratorFactoryArgs]: {
+    [symbols.decoratorFactoryState]: {
       ...upstream,
       options: {
         ...upstream.options,
@@ -70,7 +70,7 @@ export function manyToOneDecorator(args: any) {
   const entity = args.entity as string | ((type?: any) => ObjectType<any>)
   const inverseSide = args.inverseSide as string | ((object: any) => any)
   const options = args.options as ManyToOneOptions
-  const columnOptions = args[symbols.decoratorFactoryColumnOptionsArg] as ColumnOptions
+  const columnOptions = args[symbols.decoratorFactoryColumnOptions] as ColumnOptions
 
   return (target: Function, propertyName: string) => {
     ManyToOne(
@@ -87,7 +87,7 @@ export function manyToOneDecorator(args: any) {
 export function foreignKeyDecorator(args: any) {
   const relationshipName = args.relationshipName as string
   const options = args.options as JoinColumnOptions
-  const columnOptions = args[symbols.decoratorFactoryColumnOptionsArg] as ColumnOptions
+  const columnOptions = args[symbols.decoratorFactoryColumnOptions] as ColumnOptions
 
   return (target: Function, propertyName: string) => {
     // Place a @JoinColumn() on the relationship itself.

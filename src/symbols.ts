@@ -14,10 +14,10 @@ export const symbols = {
   fieldType: 'typeorm-zod.field-type',
 
   /** Holds typeorm-specific arguments that were specified in the Zod types. Passed to the decorator factory. */
-  decoratorFactoryArgs: 'typeorm-zod.decorator-factory-args',
+  decoratorFactoryState: 'typeorm-zod.decorator-factory-state',
 
-  /** A key for column options within the decorator factory arguments. */
-  decoratorFactoryColumnOptionsArg: 'typeorm-zod.decorator-factory-column-options-arg',
+  /** A special key that holds ColumnOptions within the factory state. */
+  decoratorFactoryColumnOptions: 'typeorm-zod.decorator-factory-column-options',
 
   /** Holds the decorator factory for the type. */
   decoratorFactory: 'typeorm-zod.decorator-factory',
