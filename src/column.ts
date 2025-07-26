@@ -1,12 +1,23 @@
 import { Column, ColumnOptions } from 'typeorm'
 import { z } from 'zod'
 
-import { symbols } from '../symbols'
+import { symbols } from './symbols'
+
+export function createColumnType<T extends z.ZodType<any>>(
+  base: T,
+  columnOptions: ColumnOptions
+): T & ColumnTypeModifiers
 
 export function createColumnType<T extends z.ZodType<any>, Mod extends Record<string, ColumnTypeModifier<T, any>>>(
   base: T,
   columnOptions: ColumnOptions,
   modifiers: Mod
+): T & Mod & ColumnTypeModifiers 
+
+export function createColumnType<T extends z.ZodType<any>, Mod extends Record<string, ColumnTypeModifier<T, any>>>(
+  base: T,
+  columnOptions: ColumnOptions,
+  modifiers?: Mod
 ): T & Mod & ColumnTypeModifiers {
   const type = base.meta({
     [symbols.decoratorFactory]: columnDecorator,
@@ -52,6 +63,7 @@ export function wrapColumnType<T extends z.ZodType<any>>(type: T): T & ColumnTyp
     transformer,
     optional: optional.bind(type, type.optional),
     nullable: nullable.bind(type, type.nullable),
+    unique: unique.bind(type)
   })
 
   return type as T & ColumnTypeModifiers
@@ -81,8 +93,17 @@ export function nullable<T extends z.ZodType<any>>(this: T, orig_nullable: any):
   )
 }
 
+export function unique<T extends z.ZodType<any>>(this: T): z.ZodType<z.output<T>> {
+  return modifyColumnType(
+    this,
+    base => base,
+    options => ({...options, unique: true})
+  )
+}
+
 export interface ColumnTypeModifiers {
   transformer: typeof transformer
+  unique: typeof unique
 }
 
 function columnDecorator(args: any) {

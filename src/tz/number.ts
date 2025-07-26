@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { createColumnType, modifyColumnType } from './column'
+import { ColumnTypeModifiers, createColumnType, modifyColumnType } from '../column'
 
 export function number(): FloatColumnType {
   return createColumnType(z.number(), {
@@ -63,8 +63,8 @@ function scale(this: z.ZodNumber, scale: number) {
   )
 }
 
-export type IntColumnType = z.ZodInt
-export type FloatColumnType = z.ZodNumber & {
+export type IntColumnType = z.ZodInt & ColumnTypeModifiers
+export type FloatColumnType = z.ZodNumber & ColumnTypeModifiers & {
   precision: typeof precision
   scale: typeof scale
 }

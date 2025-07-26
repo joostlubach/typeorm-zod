@@ -1,20 +1,20 @@
-import { Column, ColumnOptions, JoinColumn, ManyToOne, ObjectType } from 'typeorm'
-import { isFunction } from 'ytil'
+import { Column, ColumnOptions, JoinColumn, ManyToOne, ObjectType, OneToMany } from 'typeorm'
+import { Constructor, isFunction } from 'ytil'
 import { z } from 'zod'
 
+import { ColumnTypeModifiers, wrapColumnType } from '../column'
 import { FieldType } from '../field-types'
 import { symbols } from '../symbols'
-import { ColumnTypeModifiers, wrapColumnType } from './column'
 
-export function manyToOne<T extends z.ZodType<any>>(
-  entity: string | ((type?: any) => ObjectType<z.output<T>>),
-  inverseSide?: string | ((object: z.output<T>) => any),
+export function manyToOne<E>(
+  entity: ((type?: any) => Constructor<E>) | string,
+  inverseSide?: string | ((object: E) => any),
   options?: ManyToOneOptions
-): T & ColumnTypeModifiers & ToOneTypeModifiers
-export function manyToOne<T extends z.ZodType<any>>(
-  entity: string | ((type?: any) => ObjectType<z.output<T>>),
+): z.ZodType<E> & ColumnTypeModifiers & ToOneTypeModifiers
+export function manyToOne<E>(
+  entity: ((type?: any) => Constructor<E>) | string,
   options?: ManyToOneOptions
-): T & ColumnTypeModifiers & ToOneTypeModifiers
+): z.ZodType<E> & ColumnTypeModifiers & ToOneTypeModifiers
 export function manyToOne(...args: any[]) {
   const entity = args.shift()
   const inverseSide = typeof args[0] === 'string' || isFunction(args[0]) ? args.shift() : undefined
@@ -35,6 +35,37 @@ export function manyToOne(...args: any[]) {
 
   return wrapColumnType(type as unknown as z.ZodType<any> & ToOneTypeModifiers)
 }
+
+export function oneToMany<E>(
+  entity: ((type?: any) => Constructor<E>) | string,
+  inverseSide?: string | ((object: E) => any),
+  options?: OneToManyOptions
+): z.ZodType<E> & ToManyTypeModifiers
+export function oneToMany<E>(
+  entity: ((type?: any) => Constructor<E>) | string,
+  options?: OneToManyOptions
+): z.ZodType<E> & ToManyTypeModifiers
+export function oneToMany(...args: any[]) {
+  const entity = args.shift()
+  const inverseSide = typeof args[0] === 'string' || isFunction(args[0]) ? args.shift() : undefined
+  const options: OneToManyOptions = args.shift() ?? {}
+
+  const type = z.array(z.object()).meta({
+    [symbols.fieldType]: FieldType.Relation,
+    [symbols.decoratorFactory]: oneToManyDecorator,
+    [symbols.decoratorFactoryState]: {
+      entity, inverseSide, options,
+    },
+  })
+
+  return type as unknown as z.ZodType<any> & ToManyTypeModifiers
+}
+
+export interface ToManyTypeModifiers {
+  // Add any specific methods for one-to-many relationships here
+}
+
+type OneToManyOptions = Parameters<typeof OneToMany>[2]
 
 export function foreignKey(relationshipName: string, options?: Omit<JoinColumnOptions, 'name'>) {
   const type = z.int().positive().meta({
@@ -81,6 +112,16 @@ export function manyToOneDecorator(args: any) {
         nullable: columnOptions.nullable,
       }
     )(target, propertyName)
+  }
+}
+
+export function oneToManyDecorator(args: any) {
+  const entity = args.entity as string | ((type?: any) => ObjectType<any>)
+  const inverseSide = args.inverseSide as string | ((object: any) => any)
+  const options = args.options as OneToManyOptions
+
+  return (target: Function, propertyName: string) => {
+    OneToMany(entity, inverseSide, options)(target, propertyName)
   }
 }
 

@@ -1,10 +1,10 @@
 import { z } from 'zod'
 
-import { createColumnType, modifyColumnType } from './column'
+import { ColumnTypeModifiers, createColumnType, modifyColumnType } from '../column'
 
-export function string(): StringColumnType {
+export function string(type?: 'varchar' | 'text'): StringColumnType {
   return createColumnType(z.string(), {
-    type: 'varchar'
+    type: type ?? 'varchar'
   }, {
     max,
     min,
@@ -38,7 +38,7 @@ function length(this: z.ZodString, length: number): StringColumnType {
   )
 }
 
-export type StringColumnType = z.ZodString & {
+export type StringColumnType = z.ZodString & ColumnTypeModifiers & {
   max: typeof max
   min: typeof min
   length: typeof length
