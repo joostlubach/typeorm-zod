@@ -1,4 +1,5 @@
 import { Column, ColumnOptions } from 'typeorm'
+import { isFunction } from 'ytil'
 import { z } from 'zod'
 
 import { symbols } from './symbols'
@@ -14,20 +15,34 @@ export function createColumnType<T extends z.ZodType<any>, Mod extends Record<st
   modifiers: Mod
 ): T & Mod & ColumnTypeModifiers 
 
+export function createColumnType<T extends z.ZodType<any>>(
+  base: T,
+  decoratorFactory: (state: any) => PropertyDecorator,
+  columnOptions: ColumnOptions
+): T & ColumnTypeModifiers
+
 export function createColumnType<T extends z.ZodType<any>, Mod extends Record<string, ColumnTypeModifier<T, any>>>(
   base: T,
+  decoratorFactory: (state: any) => PropertyDecorator,
   columnOptions: ColumnOptions,
-  modifiers?: Mod
-): T & Mod & ColumnTypeModifiers {
+  modifiers: Mod
+): T & Mod & ColumnTypeModifiers 
+
+export function createColumnType(...args: any[]): z.ZodType & ColumnTypeModifiers {
+  const base = args.shift() as z.ZodType
+  const decoratorFactory = isFunction(args[0]) ? (args.shift() as (state: any) => PropertyDecorator) : columnDecorator
+  const columnOptions = args.shift() as ColumnOptions
+  const modifiers = (args.shift() ?? {}) as Record<string, ColumnTypeModifier<z.ZodType, any>>
+
   const type = base.meta({
-    [symbols.decoratorFactory]: columnDecorator,
+    [symbols.decoratorFactory]: decoratorFactory,
     [symbols.decoratorFactoryState]: {
       [symbols.decoratorFactoryColumnOptions]: columnOptions
     }
   })
 
   Object.assign(type, modifiers)
-  return wrapColumnType(type as T & Mod)
+  return wrapColumnType(type)
 }
 
 export function modifyColumnType<T extends z.ZodType<any>, U extends z.ZodType<any>>(
@@ -106,8 +121,8 @@ export interface ColumnTypeModifiers {
   unique: typeof unique
 }
 
-function columnDecorator(args: any) {
-  const columnOptions = (args[symbols.decoratorFactoryColumnOptions] ?? {}) as ColumnOptions
+function columnDecorator(state: any) {
+  const columnOptions = (state[symbols.decoratorFactoryColumnOptions] ?? {}) as ColumnOptions
   return Column(columnOptions)
 }
 

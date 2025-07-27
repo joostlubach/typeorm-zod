@@ -1,12 +1,12 @@
 import { BeforeInsert, BeforeUpdate, Entity, EntityOptions } from 'typeorm'
-import { objectEntries } from 'ytil'
+import { AnyConstructor } from 'ytil'
 import { z } from 'zod'
 
-import { ZodValidationError } from './ZodValidationError'
-import config from './config'
-import { insertSchema, updateSchema } from './field-types'
-import { symbols } from './symbols'
-import { findMeta } from './util'
+import { ZodValidationError } from '../ZodValidationError'
+import config from '../config'
+import { collectSchema, insertSchema, updateSchema } from '../schemas'
+import { symbols } from '../symbols'
+import { ZodSchema } from './ZodSchema'
 
 export function ZodEntity(name: string, schema: z.ZodObject, options?: EntityOptions): ClassDecorator
 export function ZodEntity(schema: z.ZodObject, options?: EntityOptions): ClassDecorator
@@ -16,8 +16,8 @@ export function ZodEntity(...args: any[]): ClassDecorator {
   const options = args.shift() ?? {} as EntityOptions
 
   return function (target: Function) {
-    // Set the schema on the target class.
-    Object.assign(target, {[symbols.schema]: schema})
+    // Invoke the ZodSchema decorator to set the schema on the target.
+    ZodSchema(schema)(target)
 
     // Invoke the Entity decorator.
     if (name != null) {
@@ -32,6 +32,7 @@ export function ZodEntity(...args: any[]): ClassDecorator {
 
     Object.defineProperty(target.prototype, symbols.validateInsert, {
       value: function () {
+        const schema = collectSchema(target as AnyConstructor)
         const result = insertSchema(schema).safeParse(this)
         if (result.success) {
           Object.assign(this, result.data)
@@ -44,6 +45,7 @@ export function ZodEntity(...args: any[]): ClassDecorator {
 
     Object.defineProperty(target.prototype, symbols.validateUpdate, {
       value: function () {
+        const schema = collectSchema(target as AnyConstructor)
         const result = updateSchema(schema).safeParse(this)
         if (result.success) {
           Object.assign(this, result.data)
@@ -53,23 +55,5 @@ export function ZodEntity(...args: any[]): ClassDecorator {
         }
       }
     })
-
-    // Run through all types in the schema and run their decorators.
-    for (const entry of objectEntries(schema.def.shape)) {
-      const propertyName = entry[0]
-      const type = entry[1] as z.ZodType
-
-      const decorator = createFieldDecorator(type, propertyName)
-      decorator?.(target.prototype, propertyName)
-    }
-
   }
-}
-
-function createFieldDecorator(type: z.ZodType, _propertyName: string): PropertyDecorator | null {
-  const factory =findMeta<(args: any) => PropertyDecorator>(type, symbols.decoratorFactory)
-  if (factory == null) { return null }
-
-  const args = findMeta<any>(type, symbols.decoratorFactoryState) ?? {}
-  return factory(args)
 }

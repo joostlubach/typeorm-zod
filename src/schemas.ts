@@ -1,3 +1,4 @@
+import { AnyConstructor, superConstructor } from 'ytil'
 import { z } from 'zod'
 
 import { symbols } from './symbols'
@@ -55,6 +56,15 @@ export function updateSchema(schema: z.ZodObject): z.ZodObject {
       case FieldType.Column: return type
     }
   })
+}
+
+export function collectSchema(target: AnyConstructor): z.ZodObject {
+  const ownSchema = (target as any)[symbols.schema] as z.ZodObject | undefined
+  const superCtor = superConstructor(target)
+  return {
+    ...collectSchema(superCtor),
+    ...ownSchema
+  }
 }
 
 function fieldType(type: z.ZodType): FieldType {

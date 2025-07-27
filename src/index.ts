@@ -1,5 +1,5 @@
 export * as tz from './tz'
-export { ZodEntity } from './ZodEntity'
+export * from './column'
+export * from './decorators'
 export { ZodValidationError } from './ZodValidationError'
 export { configure } from './config'
-export * from './column'

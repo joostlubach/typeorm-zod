@@ -1,9 +1,9 @@
 import { z } from 'zod'
 
-import { createColumnType } from '../column'
+import { ColumnTypeModifiers, createColumnType } from '../column'
 
-export function json<T>(base: z.ZodType<T>) {
+export function json<T>(base: z.ZodType<T>): z.ZodType<T> & ColumnTypeModifiers {
   return createColumnType(base, {
     type: 'json',
-  }, {})
+  })
 }

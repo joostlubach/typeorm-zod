@@ -3,7 +3,7 @@ import { Constructor, isFunction } from 'ytil'
 import { z } from 'zod'
 
 import { ColumnTypeModifiers, wrapColumnType } from '../column'
-import { FieldType } from '../field-types'
+import { FieldType } from '../schemas'
 import { symbols } from '../symbols'
 
 export function manyToOne<E>(

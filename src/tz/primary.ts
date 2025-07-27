@@ -1,7 +1,7 @@
 import { PrimaryColumn, PrimaryGeneratedColumn } from 'typeorm'
 import { z } from 'zod'
 
-import { FieldType } from '../field-types'
+import { FieldType } from '../schemas'
 import { symbols } from '../symbols'
 
 type PrimaryColumnOptions = Parameters<typeof PrimaryColumn>[0]
@@ -18,8 +18,8 @@ export function primary(base: z.ZodType = z.int().positive(), options?: PrimaryC
   return type as PrimaryColumnType<any>
 }
 
-function generated(this: PrimaryColumnType<any>, options?: PrimaryGeneratedColumnOptions): z.ZodType<number | string>
-function generated(this: PrimaryColumnType<any>, strategy: 'increment' | 'uuid', options?: PrimaryGeneratedColumnOptions): z.ZodType<number | string>
+function generated<T extends PrimaryColumnType<any>>(this:T, options?: PrimaryGeneratedColumnOptions): T
+function generated<T extends PrimaryColumnType<any>>(this:T, strategy: 'increment' | 'uuid', options?: PrimaryGeneratedColumnOptions): T
 function generated(this: PrimaryColumnType<any>, ...args: any[]): z.ZodType<number | string> {
   const strategy = typeof args[0] === 'string' ? args.shift() : undefined
   const options = args.shift() ?? {}
