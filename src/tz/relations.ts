@@ -80,7 +80,7 @@ export function foreignKey(relationshipName: string, options?: Omit<JoinColumnOp
   return wrapColumnType(type)
 }
 
-function cascade<T extends z.ZodType<T>>(this: T): T {
+function cascade<T>(this: z.ZodType<T>): z.ZodType<T> & ColumnTypeModifiers {
   const meta = this.meta() ?? {}
   const upstream = (meta[symbols.decoratorFactoryState] ?? {}) as Record<string, any>
 
