@@ -7,3 +7,9 @@ export function json<T>(base: z.ZodType<T>): z.ZodType<T> & ColumnTypeModifiers 
     type: 'json',
   })
 }
+
+export function jsonb<T>(base: z.ZodType<T>): z.ZodType<T> & ColumnTypeModifiers {
+  return createColumnType(base, {
+    type: 'jsonb',
+  })
+}
