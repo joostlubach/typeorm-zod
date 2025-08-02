@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { symbols } from '../symbols'
 import { findMeta } from '../util'
 
-export function ZodSchema(schema: z.ZodObject): ClassDecorator {
+export function Schema(schema: z.ZodObject): ClassDecorator {
   return function (target: Function) {
     // Set the schema on the target class.
     Object.assign(target, {[symbols.schema]: schema})

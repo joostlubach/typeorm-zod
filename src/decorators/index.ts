@@ -1,2 +1,2 @@
-export * from './ZodSchema'
-export * from './ZodEntity'
+export * from './Entity'
+export * from './Schema'

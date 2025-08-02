@@ -2,7 +2,7 @@ import { Column, ColumnOptions, JoinColumn, ManyToOne, ObjectType, OneToMany } f
 import { Constructor, isFunction } from 'ytil'
 import { z } from 'zod'
 
-import { ColumnTypeModifiers, wrapColumnType } from '../column'
+import { column, wrapColumn } from '../column'
 import { FieldType } from '../schemas'
 import { symbols } from '../symbols'
 
@@ -10,11 +10,11 @@ export function manyToOne<E>(
   entity: ((type?: any) => Constructor<E>) | string,
   inverseSide?: string | ((object: E) => any),
   options?: ManyToOneOptions
-): z.ZodType<E> & ColumnTypeModifiers & ToOneTypeModifiers
+): toOneColumn<z.ZodType<E>>
 export function manyToOne<E>(
   entity: ((type?: any) => Constructor<E>) | string,
   options?: ManyToOneOptions
-): z.ZodType<E> & ColumnTypeModifiers & ToOneTypeModifiers
+): toOneColumn<z.ZodType<E>>
 export function manyToOne(...args: any[]) {
   const entity = args.shift()
   const inverseSide = typeof args[0] === 'string' || isFunction(args[0]) ? args.shift() : undefined
@@ -33,7 +33,7 @@ export function manyToOne(...args: any[]) {
     cascade
   })
 
-  return wrapColumnType(type as unknown as z.ZodType<any> & ToOneTypeModifiers)
+  return wrapColumn(type) as unknown as toOneColumn<z.ZodType<any>>
 }
 
 export function oneToMany<E>(
@@ -77,10 +77,10 @@ export function foreignKey(relationshipName: string, options?: Omit<JoinColumnOp
     },
   })
 
-  return wrapColumnType(type)
+  return wrapColumn(type)
 }
 
-function cascade<T>(this: z.ZodType<T>): z.ZodType<T> & ColumnTypeModifiers {
+function cascade<T>(this: z.ZodType<T>): column<z.ZodType<T>> {
   const meta = this.meta() ?? {}
   const upstream = (meta[symbols.decoratorFactoryState] ?? {}) as Record<string, any>
 
@@ -94,7 +94,7 @@ function cascade<T>(this: z.ZodType<T>): z.ZodType<T> & ColumnTypeModifiers {
     }
   })
 
-  return wrapColumnType(type)
+  return wrapColumn(type)
 }
 
 export function manyToOneDecorator(args: any) {
@@ -142,6 +142,8 @@ export function foreignKeyDecorator(args: any) {
 export interface ToOneTypeModifiers {
   cascade: typeof cascade
 }
+
+export type toOneColumn<T extends z.ZodType<any>> = column<T, ToOneTypeModifiers>
 
 type JoinColumnOptions = Parameters<typeof JoinColumn>[0][0]
 type ManyToOneOptions = Parameters<typeof ManyToOne>[2]

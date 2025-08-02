@@ -1,5 +1,5 @@
 import { Column, ColumnOptions } from 'typeorm'
-import { isFunction } from 'ytil'
+import { isFunction, Override } from 'ytil'
 import { z } from 'zod'
 
 import { symbols } from './symbols'
@@ -7,32 +7,32 @@ import { symbols } from './symbols'
 export function createColumnType<T extends z.ZodType<any>>(
   base: T,
   columnOptions: ColumnOptions
-): T & ColumnTypeModifiers
+): column<T>
 
-export function createColumnType<T extends z.ZodType<any>, Mod extends Record<string, ColumnTypeModifier<T, any>>>(
+export function createColumnType<T extends z.ZodType<any>, Mod>(
   base: T,
   columnOptions: ColumnOptions,
   modifiers: Mod
-): T & Mod & ColumnTypeModifiers 
+): column<T, Mod>
 
 export function createColumnType<T extends z.ZodType<any>>(
   base: T,
   decoratorFactory: (state: any) => PropertyDecorator,
   columnOptions: ColumnOptions
-): T & ColumnTypeModifiers
+): column<T>
 
-export function createColumnType<T extends z.ZodType<any>, Mod extends Record<string, ColumnTypeModifier<T, any>>>(
+export function createColumnType<T extends z.ZodType<any>, Mod>(
   base: T,
   decoratorFactory: (state: any) => PropertyDecorator,
   columnOptions: ColumnOptions,
   modifiers: Mod
-): T & Mod & ColumnTypeModifiers 
+): column<T, Mod>
 
-export function createColumnType(...args: any[]): z.ZodType & ColumnTypeModifiers {
+export function createColumnType(...args: any[]): column<z.ZodType> {
   const base = args.shift() as z.ZodType
   const decoratorFactory = isFunction(args[0]) ? (args.shift() as (state: any) => PropertyDecorator) : columnDecorator
   const columnOptions = args.shift() as ColumnOptions
-  const modifiers = (args.shift() ?? {}) as Record<string, ColumnTypeModifier<z.ZodType, any>>
+  const modifiers = (args.shift() ?? {}) as Record<string, ColumnModifier<z.ZodType, any>>
 
   const type = base.meta({
     [symbols.decoratorFactory]: decoratorFactory,
@@ -42,14 +42,15 @@ export function createColumnType(...args: any[]): z.ZodType & ColumnTypeModifier
   })
 
   Object.assign(type, modifiers)
-  return wrapColumnType(type)
+  return wrapColumn(type)
 }
 
-export function modifyColumnType<T extends z.ZodType<any>, U extends z.ZodType<any>>(
+export function modifyColumn<T extends z.ZodType<any>, U extends z.ZodType<any>, Mod = {}>(
   base: T,
   modifier?: (type: T) => U,
-  appendOptions?: (upstream: ColumnOptions) => ColumnOptions
-): U & ColumnTypeModifiers {
+  appendOptions?: (upstream: ColumnOptions) => ColumnOptions,
+  modifiers: Mod = {} as Mod
+): column<U, Mod> {
   const upstream = base.meta() ?? {}
   const upstreamState: Record<string, any> = upstream[symbols.decoratorFactoryState] ?? {}
 
@@ -70,55 +71,67 @@ export function modifyColumnType<T extends z.ZodType<any>, U extends z.ZodType<a
     })
   }
 
-  return wrapColumnType(type as U)
+  const wrapped = wrapColumn(type as U)
+  Object.assign(wrapped, modifiers)
+  return wrapped as column<U, Mod>
 }
 
-export function wrapColumnType<T extends z.ZodType<any>>(type: T): T & ColumnTypeModifiers {
+export function wrapColumn<T extends z.ZodType<any>>(type: T): column<T> {
   Object.assign(type, {
     transformer,
-    optional: optional.bind(type, type.optional),
-    nullable: nullable.bind(type, type.nullable),
-    unique: unique.bind(type)
+    optional: optional.bind(type as unknown as column<T>, type.optional),
+    nullable: nullable.bind(type as unknown as column<T>, type.nullable),
+    unique: unique.bind(type as unknown as column<T>),
+    db_default: db_default.bind(type as unknown as column<T>),
   })
 
-  return type as T & ColumnTypeModifiers
+  return type as unknown as column<T>
 }
 
-function transformer<T extends z.ZodType<any>, Out>(this: T, transformer: ColumnTransformer<Out, z.output<T>>): z.ZodType<Out> {
-  return modifyColumnType(
+function transformer<T extends z.ZodType<any>, Out>(this: T, transformer: ColumnTransformer<Out, z.output<T>>): column<z.ZodType<Out>> {
+  return modifyColumn(
     this,
     base => base,
     options => ({...options, transformer})
   )
 }
 
-export function optional<T extends z.ZodType<any>>(this: T, orig_optional: any): z.ZodType<z.output<T> | undefined> {
-  return modifyColumnType(
-    this,
-    base => orig_optional.call(base),
+export function optional<T extends z.ZodType<any>>(this: column<T>, orig_optional: any): column<z.ZodType<z.output<T> | undefined>> {
+  return modifyColumn(
+    this as unknown as T,
+    base => orig_optional.call(base) as z.ZodType<z.output<T> | undefined>,
     options => ({...options, nullable: true})
   )
 }
 
-export function nullable<T extends z.ZodType<any>>(this: T, orig_nullable: any): z.ZodType<z.output<T> | null> {
-  return modifyColumnType(
-    this,
-    base => orig_nullable.call(base),
+export function nullable<T extends z.ZodType<any>>(this: column<T>, orig_nullable: any): column<z.ZodType<z.output<T> | null>> {
+  return modifyColumn(
+    this as unknown as T,
+    base => orig_nullable.call(base) as z.ZodType<z.output<T> | null>,
     options => ({...options, nullable: true})
   )
 }
 
-export function unique<T extends z.ZodType<any>>(this: T): z.ZodType<z.output<T>> {
-  return modifyColumnType(
-    this,
+export function unique<T extends z.ZodType<any>>(this: column<T>): column<T> {
+  return modifyColumn(
+    this as unknown as T,
     base => base,
     options => ({...options, unique: true})
   )
 }
 
-export interface ColumnTypeModifiers {
+export function db_default<T extends z.ZodType<any>>(this: column<T>, def: string): column<z.ZodType<T>> {
+  return modifyColumn(
+    this as unknown as T,
+    base => base,
+    options => ({...options, default: def})
+  )
+}
+
+export interface ColumnModifiers {
   transformer: typeof transformer
   unique: typeof unique
+  db_default: typeof db_default
 }
 
 function columnDecorator(state: any) {
@@ -131,4 +144,5 @@ export interface ColumnTransformer<T, Raw> {
   from: (raw: Raw) => T
 }
 
-export type ColumnTypeModifier<T extends z.ZodType, A extends any[]> = (this: T, ...args: A) => z.ZodType<any>
+export type ColumnModifier<T extends z.ZodType, A extends any[]> = (this: T, ...args: A) => column<z.ZodType<any>>
+export type column<Base extends z.ZodType<any>, Mod = {}> = Override<Base, ColumnModifiers & Mod>
