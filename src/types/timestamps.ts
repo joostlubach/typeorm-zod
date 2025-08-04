@@ -1,13 +1,13 @@
 import { ColumnOptions, CreateDateColumn, UpdateDateColumn } from 'typeorm'
 import { z } from 'zod'
 
-import { column, createColumnType } from '../column'
+import { column, defineColumnType } from '../column'
 import { symbols } from '../symbols'
 
 export function timestamp(): column<z.ZodDate>
 export function timestamp<T extends z.ZodType<any>>(type?: T): column<T>
 export function timestamp<T extends z.ZodType<any>>(type?: T) {
-  return createColumnType(type ?? z.date(), {
+  return defineColumnType(type ?? z.date(), {
     type: 'timestamp'
   }) 
 }
@@ -15,7 +15,7 @@ export function timestamp<T extends z.ZodType<any>>(type?: T) {
 export function create_date(): column<z.ZodDate>
 export function create_date<T extends z.ZodType<any>>(type?: T): column<T>
 export function create_date<T extends z.ZodType<any>>(type?: T) {
-  return createColumnType(type ?? z.date(), createDateDecorator, {
+  return defineColumnType(type ?? z.date(), createDateDecorator, {
     type: 'timestamp'
   }) 
 }
@@ -23,7 +23,7 @@ export function create_date<T extends z.ZodType<any>>(type?: T) {
 export function update_date(): column<z.ZodDate>
 export function update_date<T extends z.ZodType<any>>(type?: T): column<T>
 export function update_date<T extends z.ZodType<any>>(type?: T) {
-  return createColumnType(type ?? z.date(), updateDateDecorator, {
+  return defineColumnType(type ?? z.date(), updateDateDecorator, {
     type: 'timestamp'
   })
 }

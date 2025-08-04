@@ -1,4 +1,4 @@
-import { isFunction, objectEntries } from 'ytil'
+import { isFunction, isObject, objectEntries } from 'ytil'
 import { z } from 'zod'
 
 export function modifySchema(schema: z.ZodObject, modifier: (type: z.ZodType, key: string) => z.ZodType | null): z.ZodObject {
@@ -32,6 +32,8 @@ export function findMeta<T>(type: z.ZodType, key: string): T | undefined {
       current = current.unwrap()
     } else if (current._zod.parent != null && 'meta' in current._zod.parent && isFunction(current._zod.parent.meta)) {
       current = current._zod.parent as z.ZodType
+    } else if ('innerType' in current.def && isObject(current.def.innerType) && 'meta' in (current.def as any).innerType && isFunction((current.def as any).innerType.meta)) {
+      current = (current.def as any).innerType as z.ZodType
     } else {
       current = undefined
     }

@@ -22,6 +22,9 @@ export const symbols = {
   /** Holds the decorator factory for the type. */
   decoratorFactory: 'typeorm-zod.decorator-factory',
 
+  /** Holds the modifiers for the type, so they can be chained to the return type of the modifiers. */
+  modifiers: 'typeorm-zod.modifiers',
+
   // -------
   // Attached to the Entity prototype.
   // -------

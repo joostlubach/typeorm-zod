@@ -1,53 +1,36 @@
 import { z } from 'zod'
 
-import { column, createColumnType, modifyColumn } from '../column'
+import { column, defineColumnType, modifiersOf, modifyColumn } from '../column'
 
 export function string(type?: 'varchar' | 'text'): StringColumn {
-  return createColumnType(z.string(), {
+  return defineColumnType(z.string(), {
     type: type ?? 'varchar'
   }, modifiers)
 }
 
-const orig_max = z.string().max
-function max(this: z.ZodString, maxLength: number): StringColumn {
-  return modifyColumn(
-    this,
-    base => orig_max.call(base, maxLength),
-    options => ({...options, length: maxLength}),
-    modifiers
-  )
+function max<T extends z.ZodString>(this: T, maxLength: number) {
+  return modifyColumn<T, T, modifiersOf<T>>(this, ['max', [maxLength]], options => ({
+    ...options,
+    length: maxLength
+  }))
 }
 
-const orig_min = z.string().min
-function min(this: z.ZodString, minLength: number): StringColumn {
-  return modifyColumn(
-    this,
-    base => orig_min.call(base, minLength),
-    options => options,
-    modifiers
-  )
+function min<T extends z.ZodString>(this: T, minLength: number) {
+  return modifyColumn<T, T, modifiersOf<T>>(this, ['min', [minLength]])
 }
 
-const orig_length = z.string().length
-function length(this: z.ZodString, length: number): StringColumn {
-  return modifyColumn(
-    this,
-    base => orig_length.call(base, length),
-    options => ({...options, length}),
-    modifiers,
-  )
+function length<T extends z.ZodString>(this: T, length: number) {
+  return modifyColumn<T, T, modifiersOf<T>>(this, ['length', [length]], options => ({
+    ...options,
+    length: length
+  }))
 }
 
-const modifiers: StringColumnModifiers = {
+const modifiers = {
   max,
   min,
   length,
 }
 
-export interface StringColumnModifiers {
-  max: typeof max
-  min: typeof min
-  length: typeof length
-}
-
-export type StringColumn = column<z.ZodString, StringColumnModifiers>
+export type StringModifiers = typeof modifiers
+export type StringColumn = column<z.ZodString, StringModifiers>

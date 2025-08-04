@@ -21,7 +21,7 @@ export function Schema(schema: z.ZodObject): ClassDecorator {
 }
 
 function createFieldDecorator(type: z.ZodType, _propertyName: string): PropertyDecorator | null {
-  const factory =findMeta<(args: any) => PropertyDecorator>(type, symbols.decoratorFactory)
+  const factory = findMeta<(args: any) => PropertyDecorator>(type, symbols.decoratorFactory)
   if (factory == null) { return null }
 
   const args = findMeta<any>(type, symbols.decoratorFactoryState) ?? {}

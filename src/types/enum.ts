@@ -1,12 +1,12 @@
 import { AnyEnumType } from 'ytil'
 import { z } from 'zod'
 
-import { column, createColumnType } from '../column'
+import { column, defineColumnType } from '../column'
 
 function _enum<const T extends readonly string[]>(values: T, params?: string | z.core.$ZodEnumParams): column<z.ZodEnum<ToEnum<T>>>
 function _enum<const T extends AnyEnumType>(entries: T, params?: string | z.core.$ZodEnumParams): column<z.ZodEnum<T>>
 function _enum(values: any, params?: string | z.core.$ZodEnumParams): column<z.ZodEnum> {
-  return createColumnType(z.enum(values as any, params), {
+  return defineColumnType(z.enum(values as any, params), {
     type: 'enum',
     enum: values,
   }, {})
