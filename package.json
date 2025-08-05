@@ -35,6 +35,7 @@
     "typeorm": "*"
   },
   "dependencies": {
+    "casing": "^1.1.0",
     "ytil": "workspace:^",
     "zod": "^4.0.14"
   },

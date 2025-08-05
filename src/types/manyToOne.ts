@@ -54,7 +54,7 @@ export function manyToOneDecorator({entity, inverseSide, foreignKey, options}: M
     if (foreignKey != null) {
       JoinColumn({name: foreignKey})(target, property)
     } else {
-      JoinColumn({name: config.foreignKeyStrategy(property.toString())})(target, property)
+      JoinColumn({name: config.foreignKeyNaming(property.toString())})(target, property)
     }
   }
 }

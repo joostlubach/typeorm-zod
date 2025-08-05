@@ -1,7 +1,8 @@
-import { Column, ColumnOptions } from 'typeorm'
+import { Column, ColumnOptions as typeorm_ColumnOptions, Index, IndexOptions } from 'typeorm'
 import { isFunction, objectEntries } from 'ytil'
 import { z } from 'zod'
 
+import config from './config'
 import {
   FieldType,
   getMetadata,
@@ -19,7 +20,7 @@ export function buildColumnType(type: z.ZodType<any>, options: BuildColumnTypeOp
   linkRoot(type, type)
   storeMetadata(type, {
     fieldType:        options.fieldType ?? FieldType.Column,
-    decoratorFactory: options.decoratorFactory ?? Column,
+    decoratorFactory: options.decoratorFactory ?? columnDecoratorFactory,
     options:          {...options.options},
     modifiers:        {...columnModifiers, ...options.modifiers},
   })
@@ -28,7 +29,25 @@ export function buildColumnType(type: z.ZodType<any>, options: BuildColumnTypeOp
   return type
 }
 
+function columnDecoratorFactory(options: ColumnOptions): PropertyDecorator {
+  return (target: any, prop: string | symbol) => {
+    const field = prop.toString()
+    Column(options)(target, prop)
+
+    // Yeah but try to remove this conditional and the types won't work anymore!!!
+    if (typeof options.index === 'string') {
+      Index(options.index)(target, prop)
+    } else if (options.index === true) {
+      const name = config.indexNaming(field)
+      Index(name)(target, prop)
+    }
+  }
+}
+
 export type BuildColumnTypeOptions<Opts, Mod> = Partial<Metadata<Opts, Mod>>
+export interface ColumnOptions extends typeorm_ColumnOptions {
+  index?: true | string | IndexOptions
+}
 
 // #endregion
 
@@ -118,6 +137,17 @@ function db_default<T extends z.ZodType<any>>(this: T, def: string) {
   return this
 }
 
+function index<T extends z.ZodType<any>>(this: T, nameOrOptions?: string) {
+  if (typeof nameOrOptions === 'string') {
+    modifyColumnOptions(this, opts => ({...opts, index: nameOrOptions}))
+  } else if (nameOrOptions != null) {
+    modifyColumnOptions(this, opts => ({...opts, index: nameOrOptions}))
+  } else {
+    modifyColumnOptions(this, opts => ({...opts, index: true})) 
+  }
+  return this
+}
+
 function transformer<T extends z.ZodType<any>, Out>(this: T, transformer: ColumnTransformer<Out, z.output<T>>) {
   modifyColumnOptions(this, opts => ({...opts, transformer}))
   return this
@@ -134,6 +164,7 @@ const columnModifiers = {
   transformer,
   unique,
   db_default,
+  index,
 }
 
 export type ColumnModifiers = typeof columnModifiers

@@ -1,9 +1,11 @@
+import { camelize, snakeize } from 'casing'
 import { isFunction } from 'ytil'
 
 import { ZodValidationError } from './ZodValidationError'
 
 export interface Config {
-  foreignKeyStrategy: ForeignKeyStrategy
+  foreignKeyNaming: ForeignKeyNaming
+  indexNaming: IndexNaming
 
   collation: {
     default: string,
@@ -14,15 +16,23 @@ export interface Config {
 
 }
 
-export type ForeignKeyStrategy = (relationName: string) => string
+export type ForeignKeyNaming = (relationName: string) => string
 
-export namespace ForeignKeyStrategy {
-  export const CAMEL = (relationName: string) => `${relationName}Id`
-  export const SNAKE = (relationName: string) => `${relationName}_id`
+export namespace ForeignKeyNaming {
+  export const CAMEL = (relationName: string) => `${camelize(relationName)}Id`
+  export const SNAKE = (relationName: string) => `${snakeize(relationName)}_id`
+}
+
+export type IndexNaming = (field: string) => string
+
+export namespace IndexNaming {
+  export const CAMEL = (field: string) => `IDX_${camelize(field)}`
+  export const SNAKE = (field: string) => `IDX_${snakeize(field)}`
 }
 
 const config: Config = {
-  foreignKeyStrategy: ForeignKeyStrategy.SNAKE,
+  foreignKeyNaming: ForeignKeyNaming.SNAKE,
+  indexNaming:      IndexNaming.SNAKE,
 
   collation: {
     default:    'utf8mb4_0900_as_cs',
