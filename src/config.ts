@@ -4,7 +4,11 @@ import { ZodValidationError } from './ZodValidationError'
 
 export interface Config {
   foreignKeyStrategy: ForeignKeyStrategy
-  defaultCollation:   string
+
+  collation: {
+    default: string,
+    ignoreCase: string,
+  },
   
   transformError: (error: ZodValidationError<any>) => Error
 
@@ -19,7 +23,11 @@ export namespace ForeignKeyStrategy {
 
 const config: Config = {
   foreignKeyStrategy: ForeignKeyStrategy.SNAKE,
-  defaultCollation:   'utf8mb4_general_cs',
+
+  collation: {
+    default:    'utf8mb4_0900_as_cs',
+    ignoreCase: 'utf8mb4_0900_ai_ci',
+  },
 
   transformError: error => error,
 }

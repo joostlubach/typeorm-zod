@@ -14,7 +14,7 @@ export function Entity(...args: any[]): ClassDecorator {
   const name = typeof args[0] === 'string' ? args.shift() : undefined
   const schema = args.shift() as z.ZodObject
   const options = {
-    collation: config.defaultCollation,
+    collation: config.collation.default,
     ...args.shift() as EntityOptions,
   }
 

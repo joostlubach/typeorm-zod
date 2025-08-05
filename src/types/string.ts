@@ -2,6 +2,7 @@ import { ColumnOptions } from 'typeorm'
 import { z } from 'zod'
 
 import { buildColumnType, ColumnType } from '../column'
+import config from '../config'
 import { modifyColumnOptions } from '../registry'
 
 export function string(type?: 'varchar' | 'text', options: ColumnOptions = {}): StringColumn {
@@ -31,10 +32,16 @@ function collate<T extends z.ZodString>(this: T, collation: string) {
   return this
 }
 
+function ignoreCase<T extends z.ZodString>(this: T) {
+  modifyColumnOptions(this, opts => ({...opts, collation: config.collation.ignoreCase}))
+  return this
+}
+
 const modifiers = {
   max,
   length,
   collate,
+  ignoreCase,
 }
 
 export type StringModifiers = typeof modifiers
