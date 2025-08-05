@@ -7,26 +7,7 @@ export const symbols = {
   schema: 'typeorm-zod.schema',
 
   // -------
-  // Attached to a field to store metadata about the field.
-  // -------
-
-  /** Holds a semantic field type, used in deriving insert / update schemas. */
-  fieldType: 'typeorm-zod.field-type',
-
-  /** Holds typeorm-specific arguments that were specified in the Zod types. Passed to the decorator factory. */
-  decoratorFactoryState: 'typeorm-zod.decorator-factory-state',
-
-  /** A special key that holds ColumnOptions within the factory state. */
-  decoratorFactoryColumnOptions: 'typeorm-zod.decorator-factory-column-options',
-
-  /** Holds the decorator factory for the type. */
-  decoratorFactory: 'typeorm-zod.decorator-factory',
-
-  /** Holds the modifiers for the type, so they can be chained to the return type of the modifiers. */
-  modifiers: 'typeorm-zod.modifiers',
-
-  // -------
-  // Attached to the Entity prototype.
+  // Attached to the Entity prototype
   // -------
 
   /** Holds the function that validates an insert operation. */

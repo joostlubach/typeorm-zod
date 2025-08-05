@@ -1,39 +1,37 @@
-import { ColumnOptions, CreateDateColumn, UpdateDateColumn } from 'typeorm'
+import { CreateDateColumn, UpdateDateColumn } from 'typeorm'
 import { z } from 'zod'
 
-import { column, defineColumnType } from '../column'
-import { symbols } from '../symbols'
+import { buildColumnType, ColumnType } from '../column'
 
-export function timestamp(): column<z.ZodDate>
-export function timestamp<T extends z.ZodType<any>>(type?: T): column<T>
+export function timestamp(): ColumnType<z.ZodDate>
+export function timestamp<T extends z.ZodType<any>>(type?: T): ColumnType<T>
 export function timestamp<T extends z.ZodType<any>>(type?: T) {
-  return defineColumnType(type ?? z.date(), {
-    type: 'timestamp'
-  }) 
-}
-
-export function create_date(): column<z.ZodDate>
-export function create_date<T extends z.ZodType<any>>(type?: T): column<T>
-export function create_date<T extends z.ZodType<any>>(type?: T) {
-  return defineColumnType(type ?? z.date(), createDateDecorator, {
-    type: 'timestamp'
-  }) 
-}
-
-export function update_date(): column<z.ZodDate>
-export function update_date<T extends z.ZodType<any>>(type?: T): column<T>
-export function update_date<T extends z.ZodType<any>>(type?: T) {
-  return defineColumnType(type ?? z.date(), updateDateDecorator, {
-    type: 'timestamp'
+  return buildColumnType(type ?? z.date(), {
+    decoratorFactory: CreateDateColumn,
+    options: {
+      type: 'timestamp'
+    }
   })
 }
 
-function createDateDecorator(state: any) {
-  const columnOptions = (state[symbols.decoratorFactoryColumnOptions] ?? {}) as ColumnOptions
-  return CreateDateColumn(columnOptions)
+export function create_date(): ColumnType<z.ZodDate>
+export function create_date<T extends z.ZodType<any>>(type?: T): ColumnType<T>
+export function create_date<T extends z.ZodType<any>>(type?: T) {
+  return buildColumnType(type ?? z.date(), {
+    decoratorFactory: CreateDateColumn,
+    options: {
+      type: 'timestamp'
+    }
+  })
 }
 
-function updateDateDecorator(state: any) {
-  const columnOptions = (state[symbols.decoratorFactoryColumnOptions] ?? {}) as ColumnOptions
-  return UpdateDateColumn(columnOptions)
+export function update_date(): ColumnType<z.ZodDate>
+export function update_date<T extends z.ZodType<any>>(type?: T): ColumnType<T>
+export function update_date<T extends z.ZodType<any>>(type?: T) {
+  return buildColumnType(type ?? z.date(), {
+    decoratorFactory: UpdateDateColumn,
+    options: {
+      type: 'timestamp'
+    }
+  })
 }

@@ -2,72 +2,101 @@ import { Column, ColumnOptions } from 'typeorm'
 import { isFunction } from 'ytil'
 import { z } from 'zod'
 
-import { appendColumnOption, modifierOption, wrapColumnType } from './modifiers'
-import { symbols } from './symbols'
-import { column, ModifiersInput } from './typings'
+import { modifierOption } from './modifiers'
+import {
+  FieldType,
+  getMetadata,
+  linkRoot,
+  Metadata,
+  modifyColumnOptions,
+  storeMetadata,
+} from './registry'
 
-export function defineColumnType<T extends z.ZodType<any>>(
-  base: T,
-  columnOptions: ColumnOptions
-): column<T>
+// #region defineColumnType API
 
-export function defineColumnType<T extends z.ZodType<any>, Mod>(
-  base: T,
-  columnOptions: ColumnOptions,
-  modifiers: ModifiersInput<Mod>
-): column<T, Mod>
-
-export function defineColumnType<T extends z.ZodType<any>>(
-  base: T,
-  decoratorFactory: (state: any) => PropertyDecorator,
-  columnOptions: ColumnOptions
-): column<T>
-
-export function defineColumnType<T extends z.ZodType<any>, Mod>(
-  base: T,
-  decoratorFactory: (state: any) => PropertyDecorator,
-  columnOptions: ColumnOptions,
-  modifiers: ModifiersInput<Mod>
-): column<T, Mod>
-
-export function defineColumnType(...args: any[]): column<z.ZodType, any> {
-  const base = args.shift() as z.ZodType
-  const decoratorFactory = isFunction(args[0]) ? (args.shift() as (state: any) => PropertyDecorator) : columnDecorator
-  const columnOptions = args.shift() as ColumnOptions
-  const modifiers = (args.shift() ?? {}) as ModifiersInput<any>
-
-  const type = base.meta({
-    [symbols.decoratorFactory]: decoratorFactory,
-    [symbols.decoratorFactoryState]: {
-      [symbols.decoratorFactoryColumnOptions]: columnOptions
-    },
-    [symbols.modifiers]: modifiers
+export function buildColumnType<T extends z.ZodType<any>, Opts = ColumnOptions, Mod = {}>(type: T, options: BuildColumnTypeOptions<Opts, Mod> = {}): ColumnType<T, Mod> {
+  storeMetadata(type, {
+    fieldType: FieldType.Column,
+    decoratorFactory: Column as unknown as (options: Opts) => PropertyDecorator,
+    options: {} as any,
+    modifiers: {} as Mod,
+    ...options
   })
-  return wrapColumnType(type, type)
+
+  extendColumnType<T, Mod>(type, type)
+  return type
 }
 
-function columnDecorator(state: any) {
-  const columnOptions = (state[symbols.decoratorFactoryColumnOptions] ?? {}) as ColumnOptions
-  return Column(columnOptions)
+export type BuildColumnTypeOptions<Opts, Mod> = Partial<Metadata<Opts, Mod>>
+
+// #endregion
+
+// #region The magic!
+
+export function extendColumnType<T extends z.ZodType<any>, Mod>(type: T, root: z.ZodType<any>): asserts type is ColumnType<T, Mod> {
+  // Make a back link to the root type.
+  linkRoot(type, root)
+
+  // Assign modifiers to the type.
+  const modifiers = getMetadata(type).modifiers ?? {}
+  Object.assign(type, modifiers)
+
+  // Swizzle all functions to ensure they return a wrapped type.
+  for (const prop of Object.getOwnPropertyNames(type)) {
+    const value = (type as any)[prop]
+    if (!isFunction(value)) { continue }
+
+    // Replace the modifier here.
+    Object.defineProperty(type, prop, {
+      value: extendModifier(type, root, prop, value),
+      writable: true,
+      enumerable: false
+    })
+  }
 }
 
-// #region Modifiers
+function extendModifier<T extends z.ZodType<any>, F extends (...args: any[]) => any>(type: T, root: z.ZodType<any>, prop: string, original: F) {
+  const extended = function (...args: any[]) {
+    Object.defineProperty(type, prop, {value: original, writable: true, enumerable: false})
 
-modifierOption('optional', opts => ({...opts, nullable: true}))
-modifierOption('nullable', opts => ({...opts, nullable: true}))
+    try {
+      const retval = original.call(type, ...args)
+      if (retval instanceof z.ZodType) {
+        return extendColumnType(retval as z.ZodType<any>, root)
+      } else {
+        return retval
+      }
+    } finally {
+      Object.defineProperty(type, prop, {value: extended, writable: true, enumerable: false})
+    }
+  }
+
+  return extended
+}
+
+export type ModifiersInput<M> = {
+  [K in keyof M]: (original: M[K]) => M[K]
+}
+
+// #endregion
+
+// #region Common modifiers
+
+const optional = modifierOption('optional', opts => ({...opts, nullable: true}))
+const nullable = modifierOption('nullable', opts => ({...opts, nullable: true}))
 
 function unique<T extends z.ZodType<any>>(this: T) {
-  appendColumnOption(this, opts => ({...opts, unique: true}))
+  modifyColumnOptions(this, opts => ({...opts, unique: true}))
   return this
 }
 
 function db_default<T extends z.ZodType<any>>(this: T, def: string) {
-  appendColumnOption(this, opts => ({...opts, default: def}))
+  modifyColumnOptions(this, opts => ({...opts, default: def}))
   return this
 }
 
 function transformer<T extends z.ZodType<any>, Out>(this: T, transformer: ColumnTransformer<Out, z.output<T>>) {
-  appendColumnOption(this, opts => ({...opts, transformer}))
+  modifyColumnOptions(this, opts => ({...opts, transformer}))
   return this
 }
 
@@ -77,6 +106,8 @@ export interface ColumnTransformer<T, Raw> {
 }
 
 const columnModifiers = {
+  optional,
+  nullable,
   transformer,
   unique,
   db_default,
@@ -85,3 +116,19 @@ const columnModifiers = {
 export type ColumnModifiers = typeof columnModifiers
 
 // #endregion
+
+/**
+ * Specialized column type. All modifiers (that is, methods returning a new type) will be wrapped with the same
+ * modifiers as the base type.
+ */
+export type ColumnType<T extends z.ZodType<any>, Mod = {}> = T & ColumnModifiers & Mod & {
+  [K in keyof T as T[K] extends (...args: any[]) => z.ZodType<any> ? K : never]:
+    T[K] extends (...args: infer A) => z.ZodType<infer R extends z.ZodType<any>>
+      ? (...args: A) => ColumnType<R, Mod>
+      : T[K]
+}
+
+/**
+ * Utility type to extract all modifiers (also the base `ColumnModifiers`) from a column type.
+ */
+export type modifiersOf<T extends z.ZodType<any>> = T extends ColumnType<z.ZodType<any>, infer Mod> ? Mod : never

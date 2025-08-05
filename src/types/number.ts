@@ -1,53 +1,59 @@
 import { z } from 'zod'
 
-import { column, defineColumnType, modifiersOf, modifyColumn } from '../column'
+import { buildColumnType, ColumnType } from '../column'
+import { modifyColumnOptions } from '../registry'
 
 export function int(): IntColumn {
-  return defineColumnType(z.int(), {
-    type: 'int'
-  }, modifiers.int)
+  return buildColumnType(z.int(), {
+    options: {
+      type: 'int'
+    }
+  })
 }
 
 export function bigint(): IntColumn {
-  return defineColumnType(z.int(), {
-    type: 'bigint'
-  }, modifiers.int)
+  return buildColumnType(z.int(), {
+    options: {
+      type: 'bigint'
+    }
+  })
 }
 
-export function float(_: any, initialPrecision?: number, initialScale?: number): FloatColumn {
-  return defineColumnType(z.number(), {
-    type: 'float',
-    precision: initialPrecision,
-    scale: initialScale 
-  }, modifiers.float)
+export function float(initialPrecision?: number, initialScale?: number): FloatColumn {
+  return buildColumnType(z.number(), {
+    options: {
+      type: 'float',
+      precision: initialPrecision,
+      scale: initialScale
+    },
+    modifiers: modifiers.float
+  })
 }
 
-export function decimal(_: any, initialPrecision?: number, initialScale?: number): FloatColumn {
-  return defineColumnType(z.number(), {
-    type: 'decimal',
-    precision: initialPrecision,
-    scale: initialScale
-  }, modifiers.float)
-}
-
-function positive<T extends z.ZodNumber>(this: T) {
-  return modifyColumn<T, T, modifiersOf<T>>(this, ['positive', []])
+export function decimal(initialPrecision?: number, initialScale?: number): FloatColumn {
+  return buildColumnType(z.number(), {
+    options: {
+      type: 'decimal',
+      precision: initialPrecision,
+      scale: initialScale
+    },
+    modifiers: modifiers.float
+  })
 }
 
 function precision<T extends z.ZodNumber>(this: T, precision: number) {
-  return modifyColumn<T, T, modifiersOf<T>>(this, options => ({...options, precision}))
+  modifyColumnOptions(this, opts => ({...opts, precision}))
+  return this
 }
 
 function scale<T extends z.ZodNumber>(this: T, scale: number) {
-  return modifyColumn<T, T, modifiersOf<T>>(this, options => ({...options, scale}))
+  modifyColumnOptions(this, opts => ({...opts, scale}))
+  return this
 }
 
 const modifiers = {
-  int: {
-    positive
-  },
+  int: {},
   float: {
-    positive,
     precision,
     scale
   }
@@ -56,5 +62,5 @@ const modifiers = {
 export type IntModifiers = typeof modifiers.int
 export type FloatModifiers = typeof modifiers.float
 
-export type IntColumn = column<z.ZodInt, IntModifiers>
-export type FloatColumn = column<z.ZodNumber, FloatModifiers>
+export type IntColumn = ColumnType<z.ZodInt, IntModifiers>
+export type FloatColumn = ColumnType<z.ZodNumber, FloatModifiers>

@@ -1,15 +1,19 @@
 import { z } from 'zod'
 
-import { column, defineColumnType } from '../column'
+import { buildColumnType, ColumnType } from '../column'
 
-export function json<T>(base: z.ZodType<T>): column<z.ZodType<T>> {
-  return defineColumnType(base, {
-    type: 'json',
+export function json<T>(base: z.ZodType<T>): ColumnType<z.ZodType<T>> {
+  return buildColumnType(base, {
+    options: {
+      type: 'json',
+    }
   })
 }
 
-export function jsonb<T>(base: z.ZodType<T>): column<z.ZodType<T>> {
-  return defineColumnType(base, {
-    type: 'jsonb',
+export function jsonb<T>(base: z.ZodType<T>): ColumnType<z.ZodType<T>> {
+  return buildColumnType(base, {
+    options: {
+      type: 'jsonb',
+    }
   })
 }

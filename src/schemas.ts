@@ -1,28 +1,9 @@
 import { AnyConstructor, superConstructor } from 'ytil'
 import { z } from 'zod'
 
+import { FieldType, getMetadata } from './registry'
 import { symbols } from './symbols'
-import { findMeta, modifySchema } from './util'
-
-export enum FieldType {
-  /**
-   * Generated fields are included as a property in `tz.mixin()` helper, but are not required.
-   * They MAY be specified when inserting, in which case they are validated.
-   */
-  Generated,
-
-  /**
-   * Regular columns are included as a property in the `tz.mixin()` helper, and are validated when
-   * inserting or updating.
-   */
-  Column,
-
-  /**
-   * Relations are included as a property in the `tz.mixin()` helper, but are omitted from
-   * validation or insertion in the database.
-   */
-  Relation,
-}
+import { modifySchema } from './util'
 
 /**
  * Builds a schema for inserting an entity from an entity schema.
@@ -68,5 +49,6 @@ export function collectSchema(target: AnyConstructor): z.ZodObject {
 }
 
 function fieldType(type: z.ZodType): FieldType {
-  return findMeta(type, symbols.fieldType) ?? FieldType.Column
+  const meta = getMetadata(type)
+  return meta?.fieldType ?? FieldType.Column
 }

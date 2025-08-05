@@ -1,8 +1,8 @@
 import { objectEntries } from 'ytil'
 import { z } from 'zod'
 
+import { tryGetMetadata } from '../registry'
 import { symbols } from '../symbols'
-import { findMeta } from '../util'
 
 export function Schema(schema: z.ZodObject): ClassDecorator {
   return function (target: Function) {
@@ -21,9 +21,8 @@ export function Schema(schema: z.ZodObject): ClassDecorator {
 }
 
 function createFieldDecorator(type: z.ZodType, _propertyName: string): PropertyDecorator | null {
-  const factory = findMeta<(args: any) => PropertyDecorator>(type, symbols.decoratorFactory)
-  if (factory == null) { return null }
+  const meta = tryGetMetadata(type)
+  if (meta == null) { return null }
 
-  const args = findMeta<any>(type, symbols.decoratorFactoryState) ?? {}
-  return factory(args)
+  return meta.decoratorFactory(meta.options)
 }

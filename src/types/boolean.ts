@@ -1,9 +1,11 @@
 import { z } from 'zod'
 
-import { column, defineColumnType } from '../column'
+import { buildColumnType, ColumnType } from '../column'
 
-export function boolean(): column<z.ZodBoolean> {
-  return defineColumnType(z.boolean(), {
-    type: 'boolean'
+export function boolean(): ColumnType<z.ZodBoolean> {
+  return buildColumnType(z.boolean(), {
+    options: {
+      type: 'boolean'
+    }
   })
 }

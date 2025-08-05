@@ -1,8 +1,12 @@
 import { ColumnType } from 'typeorm'
 import { z } from 'zod'
 
-import { defineColumnType } from '../column'
+import { buildColumnType } from '../column'
 
 export function date(type?: ColumnType) {
-  return defineColumnType(z.date(), {type})
+  return buildColumnType(z.date(), {
+    options: {
+      type
+    }
+  })
 }
