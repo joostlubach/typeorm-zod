@@ -6,9 +6,9 @@ import { modifyColumnOptions } from '../registry'
 export function string(type?: 'varchar' | 'text'): StringColumn {
   return buildColumnType(z.string(), {
     options: {
-      type: type ?? 'varchar'
+      type: type ?? 'varchar',
     },
-    modifiers
+    modifiers,
   })
 }
 

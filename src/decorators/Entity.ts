@@ -40,7 +40,7 @@ export function Entity(...args: any[]): ClassDecorator {
           const error = new ZodValidationError(this, result.error.issues)
           throw config.transformError(error)
         }
-      }
+      },
     })
 
     Object.defineProperty(target.prototype, symbols.validateUpdate, {
@@ -53,7 +53,7 @@ export function Entity(...args: any[]): ClassDecorator {
           const error = new ZodValidationError(this, result.error.issues)
           throw config.transformError(error)
         }
-      }
+      },
     })
   }
 }

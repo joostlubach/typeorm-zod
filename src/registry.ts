@@ -44,12 +44,12 @@ export function modifyMetadata<Opts extends ColumnOptions, Mod>(type: z.ZodType<
 
 export function modifyColumnOptions<T extends z.ZodType<any>>(
   type: T,
-  modify: (upstream: ColumnOptions) => ColumnOptions
+  modify: (upstream: ColumnOptions) => ColumnOptions,
 ) {
   modifyMetadata(type, prev => {
     return {
       ...prev,
-      options: modify(prev.options ?? {})
+      options: modify(prev.options ?? {}),
     }
   })
 }

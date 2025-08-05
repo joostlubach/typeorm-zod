@@ -10,7 +10,7 @@ function _enum(values: any, params?: string | z.core.$ZodEnumParams): ColumnType
     options: {
       type: 'enum',
       enum: values,
-    }
+    },
   })
 } 
 export { _enum as enum }

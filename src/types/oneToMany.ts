@@ -20,13 +20,13 @@ export function oneToMany(...args: any[]) {
   const options: RelationOptions = args.shift() ?? {}
 
   return buildColumnType(z.object() as z.ZodType<object>, {
-    fieldType: FieldType.Relation,
+    fieldType:        FieldType.Relation,
     decoratorFactory: oneToManyDecorator,
-    options: {
+    options:          {
       entity,
       inverseSide,
-      ...options
-    }
+      ...options,
+    },
   })
 }
 

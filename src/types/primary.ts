@@ -10,11 +10,11 @@ export function primary(base?: z.ZodInt, options?: PrimaryColumnOptions): Primar
 export function primary(base: z.ZodType = z.int().positive(), options?: PrimaryColumnOptions) {
   return buildColumnType(base, {
     decoratorFactory: primaryColumnDecorator,
-    options: {
+    options:          {
       type: 'int',
-      ...options
+      ...options,
     },
-    modifiers: primaryModifiers
+    modifiers: primaryModifiers,
   })
 }
 
@@ -30,14 +30,14 @@ function generated(this: PrimaryColumn<any>, ...args: any[]): z.ZodType<number |
   modifyColumnOptions(this, opts => ({
     ...opts,
     decoratorFactory: primaryGeneratedColumnDecorator,
-    generated: strategy,
-    ...options
+    generated:        strategy,
+    ...options,
   }))
   return this
 }
 
 const primaryModifiers = {
-  generated
+  generated,
 }
 
 export type PrimaryModifiers = typeof primaryModifiers
@@ -57,9 +57,9 @@ function primaryColumnDecorator(options: PrimaryColumnOptions) {
 function primaryGeneratedColumnDecorator(options: PrimaryColumnOptions) {
   const {generated: strategy = 'increment', ...rest} = options
   switch (strategy) {
-    case 'increment': return PrimaryGeneratedColumn('increment', rest as PrimaryGeneratedColumnNumericOptions)
-    case 'uuid': return PrimaryGeneratedColumn('uuid', rest as PrimaryGeneratedColumnUUIDOptions)
-    case 'rowid': return PrimaryGeneratedColumn('rowid', rest as PrimaryGeneratedColumnUUIDOptions)
-    case 'identity': return PrimaryGeneratedColumn('identity', rest as PrimaryGeneratedColumnIdentityOptions)
+  case 'increment': return PrimaryGeneratedColumn('increment', rest as PrimaryGeneratedColumnNumericOptions)
+  case 'uuid': return PrimaryGeneratedColumn('uuid', rest as PrimaryGeneratedColumnUUIDOptions)
+  case 'rowid': return PrimaryGeneratedColumn('rowid', rest as PrimaryGeneratedColumnUUIDOptions)
+  case 'identity': return PrimaryGeneratedColumn('identity', rest as PrimaryGeneratedColumnIdentityOptions)
   }
 } 

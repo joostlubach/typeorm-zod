@@ -6,38 +6,38 @@ import { modifyColumnOptions } from '../registry'
 export function int(): IntColumn {
   return buildColumnType(z.int(), {
     options: {
-      type: 'int'
-    }
+      type: 'int',
+    },
   })
 }
 
 export function bigint(): IntColumn {
   return buildColumnType(z.int(), {
     options: {
-      type: 'bigint'
-    }
+      type: 'bigint',
+    },
   })
 }
 
 export function float(initialPrecision?: number, initialScale?: number): FloatColumn {
   return buildColumnType(z.number(), {
     options: {
-      type: 'float',
+      type:      'float',
       precision: initialPrecision,
-      scale: initialScale
+      scale:     initialScale,
     },
-    modifiers: modifiers.float
+    modifiers: modifiers.float,
   })
 }
 
 export function decimal(initialPrecision?: number, initialScale?: number): FloatColumn {
   return buildColumnType(z.number(), {
     options: {
-      type: 'decimal',
+      type:      'decimal',
       precision: initialPrecision,
-      scale: initialScale
+      scale:     initialScale,
     },
-    modifiers: modifiers.float
+    modifiers: modifiers.float,
   })
 }
 
@@ -52,11 +52,11 @@ function scale<T extends z.ZodNumber>(this: T, scale: number) {
 }
 
 const modifiers = {
-  int: {},
+  int:   {},
   float: {
     precision,
-    scale
-  }
+    scale,
+  },
 } 
 
 export type IntModifiers = typeof modifiers.int

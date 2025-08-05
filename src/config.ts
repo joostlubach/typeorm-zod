@@ -21,7 +21,7 @@ const config: Config = {
   foreignKeyStrategy: ForeignKeyStrategy.SNAKE,
   defaultCollation:   'utf8mb4_0900_ai_ci',
 
-  transformError: error => error
+  transformError: error => error,
 }
 
 export default config

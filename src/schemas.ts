@@ -14,9 +14,9 @@ import { modifySchema } from './util'
 export function insertSchema(schema: z.ZodObject): z.ZodObject {
   return modifySchema(schema, type => {
     switch (fieldType(type)) {
-      case FieldType.Relation: return null
-      case FieldType.Generated: return type.optional()
-      case FieldType.Column: return type
+    case FieldType.Relation: return null
+    case FieldType.Generated: return type.optional()
+    case FieldType.Column: return type
     }
   })
 }
@@ -32,9 +32,9 @@ export function insertSchema(schema: z.ZodObject): z.ZodObject {
 export function updateSchema(schema: z.ZodObject): z.ZodObject {
   return modifySchema(schema, type => {
     switch (fieldType(type)) {
-      case FieldType.Relation: return null
-      case FieldType.Generated: return null
-      case FieldType.Column: return type
+    case FieldType.Relation: return null
+    case FieldType.Generated: return null
+    case FieldType.Column: return type
     }
   })
 }
@@ -44,7 +44,7 @@ export function collectSchema(target: AnyConstructor): z.ZodObject {
   const superCtor = superConstructor(target)
   return {
     ...collectSchema(superCtor),
-    ...ownSchema
+    ...ownSchema,
   }
 }
 

@@ -6,7 +6,7 @@ import { buildColumnType } from '../column'
 export function date(type?: ColumnType) {
   return buildColumnType(z.date(), {
     options: {
-      type
-    }
+      type,
+    },
   })
 }

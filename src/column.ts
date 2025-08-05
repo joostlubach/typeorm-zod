@@ -18,10 +18,10 @@ export function buildColumnType<T extends z.ZodType<any>, Opts, Mod = {}>(type: 
 export function buildColumnType(type: z.ZodType<any>, options: BuildColumnTypeOptions<any, any> = {}) {
   linkRoot(type, type)
   storeMetadata(type, {
-    fieldType: options.fieldType ?? FieldType.Column,
+    fieldType:        options.fieldType ?? FieldType.Column,
     decoratorFactory: options.decoratorFactory ?? Column,
-    options: {...options.options},
-    modifiers: {...columnModifiers, ...options.modifiers},
+    options:          {...options.options},
+    modifiers:        {...columnModifiers, ...options.modifiers},
   })
 
   extendColumnType(type, type)
@@ -54,14 +54,14 @@ export function extendColumnType<T extends z.ZodType<any>, Mod>(type: T, root: z
     const modifier = (modifiers as any)[key]
 
     Object.defineProperty(type, key, {
-      value: extendModifier(type, root, key as keyof T, modifier, original),
-      writable: true,
-      enumerable: false
+      value:      extendModifier(type, root, key as keyof T, modifier, original),
+      writable:   true,
+      enumerable: false,
     })
   }
 }
 
-function extendModifier<T extends z.ZodType<any>, P extends keyof T, F extends (...args: any[]) => any>(type: T, root: z.ZodType<any>, prop: P, modifier: F | undefined, original: F) {
+function extendModifier<T extends z.ZodType<any>, P extends keyof T, F extends(...args: any[]) => any>(type: T, root: z.ZodType<any>, prop: P, modifier: F | undefined, original: F) {
   const extended = function (...args: any[]) {
     // Create a wrapped version of the original function that will return a wrapped type.
     Object.defineProperty(type, prop, {
@@ -74,8 +74,8 @@ function extendModifier<T extends z.ZodType<any>, P extends keyof T, F extends (
         }
         return retval
       },
-      writable: true,
-      enumerable: false
+      writable:   true,
+      enumerable: false,
     })
 
     try {
