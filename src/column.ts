@@ -1,8 +1,7 @@
 import { Column, ColumnOptions } from 'typeorm'
-import { isFunction } from 'ytil'
+import { isFunction, objectEntries } from 'ytil'
 import { z } from 'zod'
 
-import { modifierOption } from './modifiers'
 import {
   FieldType,
   getMetadata,
@@ -14,16 +13,18 @@ import {
 
 // #region defineColumnType API
 
-export function buildColumnType<T extends z.ZodType<any>, Opts = ColumnOptions, Mod = {}>(type: T, options: BuildColumnTypeOptions<Opts, Mod> = {}): ColumnType<T, Mod> {
+export function buildColumnType<T extends z.ZodType<any>, Mod = {}>(type: T, options?: BuildColumnTypeOptions<ColumnOptions, Mod>): ColumnType<T, Mod>
+export function buildColumnType<T extends z.ZodType<any>, Opts, Mod = {}>(type: T, options?: BuildColumnTypeOptions<Opts, Mod>): ColumnType<T, Mod>
+export function buildColumnType(type: z.ZodType<any>, options: BuildColumnTypeOptions<any, any> = {}) {
+  linkRoot(type, type)
   storeMetadata(type, {
-    fieldType: FieldType.Column,
-    decoratorFactory: Column as unknown as (options: Opts) => PropertyDecorator,
-    options: {} as any,
-    modifiers: {} as Mod,
-    ...options
+    fieldType: options.fieldType ?? FieldType.Column,
+    decoratorFactory: options.decoratorFactory ?? Column,
+    options: {...options.options},
+    modifiers: {...columnModifiers, ...options.modifiers},
   })
 
-  extendColumnType<T, Mod>(type, type)
+  extendColumnType(type, type)
   return type
 }
 
@@ -34,38 +35,51 @@ export type BuildColumnTypeOptions<Opts, Mod> = Partial<Metadata<Opts, Mod>>
 // #region The magic!
 
 export function extendColumnType<T extends z.ZodType<any>, Mod>(type: T, root: z.ZodType<any>): asserts type is ColumnType<T, Mod> {
-  // Make a back link to the root type.
-  linkRoot(type, root)
-
   // Assign modifiers to the type.
+  const originalModifiers: Record<string, (...args: any[]) => z.ZodType<any>> = {}
   const modifiers = getMetadata(type).modifiers ?? {}
-  Object.assign(type, modifiers)
+  for (const [key, value] of objectEntries(modifiers)) {
+    originalModifiers[key] = (type as any)[key]
+    Object.defineProperty(type, key, {value, writable: true, enumerable: false})
+  }
 
   // Swizzle all functions to ensure they return a wrapped type.
-  for (const prop of Object.getOwnPropertyNames(type)) {
-    const value = (type as any)[prop]
-    if (!isFunction(value)) { continue }
+  for (const key of Object.getOwnPropertyNames(type)) {
+    const descriptor = Object.getOwnPropertyDescriptor(type, key)
+    if (descriptor == null) { continue }
+    if (!descriptor.writable) { continue }
+    if (!isFunction(descriptor.value)) { continue }
 
-    // Replace the modifier here.
-    Object.defineProperty(type, prop, {
-      value: extendModifier(type, root, prop, value),
+    const original = originalModifiers[key] ?? (type as any)[key]
+    const modifier = (modifiers as any)[key]
+
+    Object.defineProperty(type, key, {
+      value: extendModifier(type, root, key as keyof T, modifier, original),
       writable: true,
       enumerable: false
     })
   }
 }
 
-function extendModifier<T extends z.ZodType<any>, F extends (...args: any[]) => any>(type: T, root: z.ZodType<any>, prop: string, original: F) {
+function extendModifier<T extends z.ZodType<any>, P extends keyof T, F extends (...args: any[]) => any>(type: T, root: z.ZodType<any>, prop: P, modifier: F | undefined, original: F) {
   const extended = function (...args: any[]) {
-    Object.defineProperty(type, prop, {value: original, writable: true, enumerable: false})
+    // Create a wrapped version of the original function that will return a wrapped type.
+    Object.defineProperty(type, prop, {
+      value: function (...args: any[]) {
+        const retval = original.call(type, ...args)
+        if (retval instanceof z.ZodType && retval !== type) {
+          // Make a back link to the root type and extend the type.
+          linkRoot(retval, root)
+          extendColumnType(retval as z.ZodType<any>, root)
+        }
+        return retval
+      },
+      writable: true,
+      enumerable: false
+    })
 
     try {
-      const retval = original.call(type, ...args)
-      if (retval instanceof z.ZodType) {
-        return extendColumnType(retval as z.ZodType<any>, root)
-      } else {
-        return retval
-      }
+      return (modifier ?? (type as any)[prop]).call(type, ...args)
     } finally {
       Object.defineProperty(type, prop, {value: extended, writable: true, enumerable: false})
     }
@@ -82,8 +96,17 @@ export type ModifiersInput<M> = {
 
 // #region Common modifiers
 
-const optional = modifierOption('optional', opts => ({...opts, nullable: true}))
-const nullable = modifierOption('nullable', opts => ({...opts, nullable: true}))
+function optional<T extends z.ZodType<any>>(this: T) {
+  const modified = this.optional()
+  modifyColumnOptions(modified, opts => ({...opts, nullable: true}))
+  return modified
+}
+
+function nullable<T extends z.ZodType<any>>(this: T) {
+  const modified = this.nullable()
+  modifyColumnOptions(modified, opts => ({...opts, nullable: true}))
+  return modified
+}
 
 function unique<T extends z.ZodType<any>>(this: T) {
   modifyColumnOptions(this, opts => ({...opts, unique: true}))

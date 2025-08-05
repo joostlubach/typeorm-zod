@@ -10,6 +10,7 @@ import { Constructor, isFunction } from 'ytil'
 import { z } from 'zod'
 
 import { buildColumnType, ColumnType } from '../column'
+import config from '../config'
 import { modifyColumnOptions } from '../registry'
 
 // #region manyToOne
@@ -34,18 +35,28 @@ export function manyToOne(...args: any[]) {
       entity,
       inverseSide,
       options,
-    }
+    },
+    modifiers,
   })
 }
 
 export interface ManyToOneColumnOptions {
   entity: string | ((type?: any) => ObjectType<any>)
   inverseSide: string | ((object: any) => any)
+  foreignKey?: string
   options?: RelationOptions
 }
 
-export function manyToOneDecorator({entity, inverseSide, options}: ManyToOneColumnOptions) {
-  return ManyToOne(entity, inverseSide, options)
+export function manyToOneDecorator({entity, inverseSide, foreignKey, options}: ManyToOneColumnOptions) {
+  return function (target: any, property: string | symbol) {
+    ManyToOne(entity, inverseSide, options)(target, property)
+
+    if (foreignKey != null) {
+      JoinColumn({name: foreignKey})(target, property)
+    } else {
+      JoinColumn({name: config.foreignKeyStrategy(property.toString())})(target, property)
+    }
+  }
 }
 
 // #endregion
@@ -91,8 +102,17 @@ function cascade<T extends z.ZodType<any>>(this: T) {
   return this
 }
 
+function foreignKeyModifier<T extends z.ZodType<any>>(this: T, foreignKeyField: string) {
+  modifyColumnOptions(this, options => ({
+    ...options,
+    foreignKey: foreignKeyField
+  }))
+  return this
+}
+
 const modifiers = {
   cascade,
+  foreignKey: foreignKeyModifier,
 }
 
 // #endregion
