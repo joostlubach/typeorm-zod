@@ -19,7 +19,7 @@ export namespace ForeignKeyStrategy {
 
 const config: Config = {
   foreignKeyStrategy: ForeignKeyStrategy.SNAKE,
-  defaultCollation:   'utf8mb4_0900_ai_ci',
+  defaultCollation:   'utf8mb4_general_cs',
 
   transformError: error => error,
 }

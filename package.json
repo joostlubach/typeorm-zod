@@ -31,8 +31,10 @@
     "tsc-alias": "^1.8.16",
     "typescript": "5.4.3"
   },
+  "peerDependencies": {
+    "typeorm": "*"
+  },
   "dependencies": {
-    "typeorm": "^0.3.25",
     "ytil": "workspace:^",
     "zod": "^4.0.14"
   },

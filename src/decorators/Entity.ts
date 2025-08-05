@@ -13,7 +13,10 @@ export function Entity(schema: z.ZodObject, options?: EntityOptions): ClassDecor
 export function Entity(...args: any[]): ClassDecorator {
   const name = typeof args[0] === 'string' ? args.shift() : undefined
   const schema = args.shift() as z.ZodObject
-  const options = args.shift() ?? {} as EntityOptions
+  const options = {
+    collation: config.defaultCollation,
+    ...args.shift() as EntityOptions,
+  }
 
   return function (target: Function) {
     // Invoke the tz.Schema decorator to set the schema on the target.

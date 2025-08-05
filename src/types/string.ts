@@ -1,12 +1,14 @@
+import { ColumnOptions } from 'typeorm'
 import { z } from 'zod'
 
 import { buildColumnType, ColumnType } from '../column'
 import { modifyColumnOptions } from '../registry'
 
-export function string(type?: 'varchar' | 'text'): StringColumn {
+export function string(type?: 'varchar' | 'text', options: ColumnOptions = {}): StringColumn {
   return buildColumnType(z.string(), {
     options: {
       type: type ?? 'varchar',
+      ...options,
     },
     modifiers,
   })
@@ -24,9 +26,15 @@ function length<T extends z.ZodString>(this: T, length: number) {
   return modified
 }
 
+function collate<T extends z.ZodString>(this: T, collation: string) {
+  modifyColumnOptions(this, opts => ({...opts, collation}))
+  return this
+}
+
 const modifiers = {
   max,
   length,
+  collate,
 }
 
 export type StringModifiers = typeof modifiers
