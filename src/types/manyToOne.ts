@@ -47,15 +47,12 @@ export interface ManyToOneColumnOptions {
   options?: RelationOptions
 }
 
-export function manyToOneDecorator({entity, inverseSide, foreignKey, options}: ManyToOneColumnOptions) {
+export function manyToOneDecorator({entity, inverseSide, foreignKey: explicitForeignKey, options}: ManyToOneColumnOptions) {
   return function (target: any, property: string | symbol) {
     ManyToOne(entity, inverseSide, options)(target, property)
 
-    if (foreignKey != null) {
-      JoinColumn({name: foreignKey})(target, property)
-    } else {
-      JoinColumn({name: config.foreignKeyNaming(property.toString())})(target, property)
-    }
+    const foreignKey = explicitForeignKey ?? config.foreignKeyNaming(property.toString())
+    JoinColumn({name: foreignKey})(target, property)
   }
 }
 
