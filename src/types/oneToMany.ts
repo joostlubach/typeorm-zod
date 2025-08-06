@@ -9,11 +9,11 @@ export function oneToMany<E>(
   entity: ((type?: any) => Constructor<E>) | string,
   inverseSide?: string | ((object: E) => any),
   options?: RelationOptions
-): ToManyColumn<E>
+): ToManyColumn<E | undefined>
 export function oneToMany<E>(
   entity: ((type?: any) => Constructor<E>) | string,
   options?: RelationOptions
-): ToManyColumn<E>
+): ToManyColumn<E | undefined>
 export function oneToMany(...args: any[]) {
   const entity = args.shift()
   const inverseSide = typeof args[0] === 'string' || isFunction(args[0]) ? args.shift() : undefined

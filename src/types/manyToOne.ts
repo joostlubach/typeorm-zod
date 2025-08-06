@@ -19,11 +19,11 @@ export function manyToOne<E>(
   entity: ((type?: any) => Constructor<E>) | string,
   inverseSide?: string | ((object: E) => any),
   options?: RelationOptions
-): ToOneColumn<z.ZodType<E>>
+): ToOneColumn<z.ZodType<E | undefined>>
 export function manyToOne<E>(
   entity: ((type?: any) => Constructor<E>) | string,
   options?: RelationOptions
-): ToOneColumn<z.ZodType<E>>
+): ToOneColumn<z.ZodType<E | undefined>>
 export function manyToOne(...args: any[]) {
   const entity = args.shift()
   const inverseSide = typeof args[0] === 'string' || isFunction(args[0]) ? args.shift() : undefined
