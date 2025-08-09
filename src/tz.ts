@@ -1,5 +1,6 @@
 export * from './types'
 export * from './column'
 export * from './decorators'
+export * from './validate'
 export { ZodValidationError } from './ZodValidationError'
 export { configure } from './config'

@@ -3,7 +3,7 @@ import { z } from 'zod'
 
 import { FieldType, getMetadata } from './registry'
 import { symbols } from './symbols'
-import { modifySchema } from './util'
+import { mergeSchemas, modifySchema } from './util'
 
 /**
  * Builds a schema for inserting an entity from an entity schema.
@@ -12,7 +12,10 @@ import { modifySchema } from './util'
  * - Relations are omitted.
  */
 export function insertSchema(schema: z.ZodObject): z.ZodObject {
-  return modifySchema(schema, type => {
+  return modifySchema(schema, (type, _key) => {
+    if (type instanceof z.ZodReadonly) { return null }
+    if (columnOptions(type).generated != null) { return null }
+
     switch (fieldType(type)) {
     case FieldType.Relation: return null
     case FieldType.Generated: return type.optional()
@@ -31,6 +34,9 @@ export function insertSchema(schema: z.ZodObject): z.ZodObject {
  */
 export function updateSchema(schema: z.ZodObject): z.ZodObject {
   return modifySchema(schema, type => {
+    if (type instanceof z.ZodReadonly) { return null }
+    if (columnOptions(type).generated != null) { return null }
+
     switch (fieldType(type)) {
     case FieldType.Relation: return null
     case FieldType.Generated: return null
@@ -40,15 +46,27 @@ export function updateSchema(schema: z.ZodObject): z.ZodObject {
 }
 
 export function collectSchema(target: AnyConstructor): z.ZodObject {
-  const ownSchema = (target as any)[symbols.schema] as z.ZodObject | undefined
   const superCtor = superConstructor(target)
-  return {
-    ...collectSchema(superCtor),
-    ...ownSchema,
+  const parentSchema = superCtor == null ? undefined : collectSchema(superCtor)
+  const ownSchema = (target as any)[symbols.schema] as z.ZodObject | undefined
+  
+  if (parentSchema == null && ownSchema != null) {
+    return ownSchema
+  } else if (parentSchema != null && ownSchema == null) {
+    return parentSchema
+  } else if (parentSchema != null && ownSchema != null) {
+    return mergeSchemas(parentSchema, ownSchema)
+  } else {
+    return z.object({})
   }
 }
 
 function fieldType(type: z.ZodType): FieldType {
   const meta = getMetadata(type)
   return meta?.fieldType ?? FieldType.Column
+}
+
+function columnOptions(type: z.ZodType): Record<string, any> {
+  const meta = getMetadata(type)
+  return meta?.options ?? {}
 }

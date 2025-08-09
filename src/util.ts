@@ -21,6 +21,23 @@ export function modifySchema(schema: z.ZodObject, modifier: (type: z.ZodType, ke
   return next
 }
 
+export function mergeSchemas(left: z.ZodObject, right: z.ZodObject): z.ZodObject {
+  const shape: Record<string, z.ZodType> = {
+    ...left.shape,
+    ...right.shape,
+  }
+
+  // Build a new schema.
+  let next = z.object(shape)
+
+  // Apply all additional checks from both schemas.
+  for (const check of [...(left.def.checks ?? []), ...(right.def.checks ?? [])]) {
+    next = next.check(check as z.core.$ZodCheck<any>)
+  }
+  
+  return next
+}
+
 export function findMeta<T>(type: z.ZodType, key: string): T | undefined {
   let current: z.ZodType | undefined = type
   while (current != null) {

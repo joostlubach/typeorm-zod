@@ -11,7 +11,7 @@ import { z } from 'zod'
 
 import { buildColumnType, ColumnType } from '../column'
 import config from '../config'
-import { modifyColumnOptions } from '../registry'
+import { FieldType, modifyColumnOptions } from '../registry'
 
 // #region manyToOne
 
@@ -31,6 +31,7 @@ export function manyToOne(...args: any[]) {
 
   return buildColumnType(z.object() as z.ZodType<object>, {
     decoratorFactory: manyToOneDecorator,
+    fieldType:        FieldType.Relation,
     options:          {
       entity,
       inverseSide,

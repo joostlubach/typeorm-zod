@@ -1,11 +1,9 @@
 import { BeforeInsert, BeforeUpdate, Entity as typeorm_Entity, EntityOptions } from 'typeorm'
-import { AnyConstructor } from 'ytil'
 import { z } from 'zod'
 
-import { ZodValidationError } from '../ZodValidationError'
 import config from '../config'
-import { collectSchema, insertSchema, updateSchema } from '../schemas'
 import { symbols } from '../symbols'
+import { validateInsert, validateUpdate } from '../validate'
 import { Schema } from './Schema'
 
 export function Entity(name: string, schema: z.ZodObject, options?: EntityOptions): ClassDecorator
@@ -29,34 +27,18 @@ export function Entity(...args: any[]): ClassDecorator {
       typeorm_Entity(options)(target)
     }
 
-    // Use BeforeInsert and BeforeUpdate to run validation.
-    BeforeInsert()(target.prototype, symbols.validateInsert)
-    BeforeUpdate()(target.prototype, symbols.validateUpdate)
+    if (config.useHooksForValidation) {
+      // Use BeforeInsert and BeforeUpdate to run validation.
+      BeforeInsert()(target.prototype, symbols.validateInsert)
+      BeforeUpdate()(target.prototype, symbols.validateUpdate)
+    }
 
     Object.defineProperty(target.prototype, symbols.validateInsert, {
-      value: function () {
-        const schema = collectSchema(target as AnyConstructor)
-        const result = insertSchema(schema).safeParse(this)
-        if (result.success) {
-          Object.assign(this, result.data)
-        } else {
-          const error = new ZodValidationError(this, result.error.issues)
-          throw config.transformError(error)
-        }
-      },
+      value: async function () { await validateInsert(this) },
     })
 
     Object.defineProperty(target.prototype, symbols.validateUpdate, {
-      value: function () {
-        const schema = collectSchema(target as AnyConstructor)
-        const result = updateSchema(schema).safeParse(this)
-        if (result.success) {
-          Object.assign(this, result.data)
-        } else {
-          const error = new ZodValidationError(this, result.error.issues)
-          throw config.transformError(error)
-        }
-      },
+      value: async function () { await validateUpdate(this) },
     })
   }
 }

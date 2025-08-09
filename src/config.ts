@@ -1,8 +1,6 @@
 import { camelize, snakeize } from 'casing'
 import { isFunction } from 'ytil'
 
-import { ZodValidationError } from './ZodValidationError'
-
 export interface Config {
   foreignKeyNaming: ForeignKeyNaming
   indexNaming: IndexNaming
@@ -10,10 +8,9 @@ export interface Config {
   collation: {
     default: string,
     ignoreCase: string,
-  },
-  
-  transformError: (error: ZodValidationError<any>) => Error
+  }
 
+  useHooksForValidation: boolean
 }
 
 export type ForeignKeyNaming = (relationName: string) => string
@@ -39,7 +36,7 @@ const config: Config = {
     ignoreCase: 'utf8mb4_0900_ai_ci',
   },
 
-  transformError: error => error,
+  useHooksForValidation: true,
 }
 
 export default config
