@@ -1,4 +1,4 @@
-import { ColumnOptions } from 'typeorm'
+import { Column, ColumnOptions } from 'typeorm'
 import { z } from 'zod'
 
 const rootMap = new WeakMap<z.ZodType<any>, RootLink>()
@@ -8,7 +8,7 @@ export function linkRoot(leaf: z.ZodType<any>, root: z.ZodType<any>): void {
   rootMap.set(leaf, {root})
 }
 
-export function tryGetMetadata<Opts extends ColumnOptions, Mod>(leaf: z.ZodType<any>): Metadata<Opts, Mod> | undefined {
+export function tryGetMetadata<Opts, Mod>(leaf: z.ZodType<any>): Metadata<Opts, Mod> | undefined {
   const root = rootMap.get(leaf)
   if (root == null) { return undefined }
 
@@ -18,7 +18,7 @@ export function tryGetMetadata<Opts extends ColumnOptions, Mod>(leaf: z.ZodType<
   return meta as Metadata<Opts, Mod>
 }
 
-export function getMetadata<Opts extends ColumnOptions, Mod>(leaf: z.ZodType<any>): Metadata<Opts, Mod> {
+export function getMetadata<Opts, Mod>(leaf: z.ZodType<any>): Metadata<Opts, Mod> {
   const meta = tryGetMetadata<Opts, Mod>(leaf)
   if (meta == null) {
     throw new Error("No metadata found - input must be a column type")
@@ -27,7 +27,7 @@ export function getMetadata<Opts extends ColumnOptions, Mod>(leaf: z.ZodType<any
   return meta as Metadata<Opts, Mod>
 }
 
-export function storeMetadata<Opts extends ColumnOptions, Mod>(leaf: z.ZodType<any>, metadata: Metadata<Opts, Mod>): void {
+export function storeMetadata<Opts, Mod>(leaf: z.ZodType<any>, metadata: Metadata<Opts, Mod>): void {
   const root = rootMap.get(leaf)
   if (root == null) {
     throw new Error("Not a column type")
@@ -37,19 +37,22 @@ export function storeMetadata<Opts extends ColumnOptions, Mod>(leaf: z.ZodType<a
 }
 
 
-export function modifyMetadata<Opts extends ColumnOptions, Mod>(type: z.ZodType<any>, modify: (prev: Metadata<Opts, Mod>) => Metadata<Opts, Mod>) {
+export function modifyMetadata<Opts, Mod>(
+  type: z.ZodType<any>,
+  modify: (prev: Metadata<Opts, Mod>) => Metadata<Opts, Mod>,
+) {
   const prev = getMetadata<Opts, Mod>(type)
   storeMetadata(type, modify(prev))
 }
 
-export function modifyColumnOptions<T extends z.ZodType<any>>(
-  type: T,
-  modify: (upstream: ColumnOptions) => ColumnOptions,
+export function modifyColumnOptions<Opts extends Record<string, any> = ColumnOptions>(
+  type: z.ZodType<any>,
+  modify: (upstream: Opts) => Opts,
 ) {
-  modifyMetadata(type, prev => {
+  modifyMetadata<Opts, any>(type, prev => {
     return {
       ...prev,
-      options: modify(prev.options ?? {}),
+      options: modify(prev.options ?? {} as Opts),
     }
   })
 }

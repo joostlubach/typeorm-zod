@@ -14,7 +14,7 @@ export function Schema(schema: z.ZodObject): ClassDecorator {
       const propertyName = entry[0]
       const type = entry[1] as z.ZodType
 
-      const decorator = createFieldDecorator(type, propertyName)
+      const decorator = createFieldDecorator(type, propertyName) 
       decorator?.(target.prototype, propertyName)
     }
   }

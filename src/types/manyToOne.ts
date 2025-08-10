@@ -64,7 +64,8 @@ export function manyToOneDecorator({entity, inverseSide, foreignKey: explicitFor
 export function foreignKey(relationName: string, options?: Omit<JoinColumnOptions, 'name'>) {
   return buildColumnType(z.int().positive(), {
     decoratorFactory: foreignKeyDecorator,
-    options:          {
+
+    options: {
       relationName,
       options,
     },
@@ -93,15 +94,18 @@ interface ForeignKeyOptions {
 // #region modifiers
 
 function cascade<T extends z.ZodType<any>>(this: T) {
-  modifyColumnOptions(this, options => ({
+  modifyColumnOptions<ManyToOneColumnOptions>(this, options => ({
     ...options,
-    onDelete: 'CASCADE',
+    options: {
+      ...options.options,
+      onDelete: 'CASCADE',
+    },
   }))
   return this
 }
 
 function foreignKeyModifier<T extends z.ZodType<any>>(this: T, foreignKeyField: string) {
-  modifyColumnOptions(this, options => ({
+  modifyColumnOptions<ManyToOneColumnOptions>(this, options => ({
     ...options,
     foreignKey: foreignKeyField,
   }))
