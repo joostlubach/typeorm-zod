@@ -45,12 +45,13 @@ export interface ManyToOneColumnOptions {
   entity: string | ((type?: any) => ObjectType<any>)
   inverseSide: string | ((object: any) => any)
   foreignKey?: string
+  nullable?: boolean
   options?: RelationOptions
 }
 
-export function manyToOneDecorator({entity, inverseSide, foreignKey: explicitForeignKey, options}: ManyToOneColumnOptions) {
+export function manyToOneDecorator({entity, inverseSide, foreignKey: explicitForeignKey, nullable, options}: ManyToOneColumnOptions) {
   return function (target: any, property: string | symbol) {
-    ManyToOne(entity, inverseSide, options)(target, property)
+    ManyToOne(entity, inverseSide, {...options, nullable: true})(target, property)
 
     const foreignKey = explicitForeignKey ?? config.foreignKeyNaming(property.toString())
     JoinColumn({name: foreignKey})(target, property)
@@ -72,7 +73,7 @@ export function foreignKey(relationName: string, options?: Omit<JoinColumnOption
   })
 }
 
-export function foreignKeyDecorator({relationName, options}: ForeignKeyOptions): PropertyDecorator {
+export function foreignKeyDecorator({relationName, nullable, options}: ForeignKeyOptions): PropertyDecorator {
   return (target: any, name: string | symbol) => {
     if (typeof name !== 'string') { return }
 
@@ -80,12 +81,13 @@ export function foreignKeyDecorator({relationName, options}: ForeignKeyOptions):
     JoinColumn({name, ...options})(target, relationName)
 
     // Place a regular @Column() on this column.
-    Column('int')(target, name)
+    Column('int', {nullable})(target, name)
   }
 }
 
 interface ForeignKeyOptions {
   relationName: string
+  nullable?: boolean
   options?: Omit<JoinColumnOptions, 'name'>
 }
 
