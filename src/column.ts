@@ -149,7 +149,13 @@ function index<T extends z.ZodType<any>>(this: T, nameOrOptions?: string) {
 }
 
 function transformer<T extends z.ZodType<any>, Out>(this: T, transformer: ColumnTransformer<Out, z.output<T>>): z.ZodType<Out> {
-  modifyColumnOptions(this, opts => ({...opts, transformer}))
+  modifyColumnOptions(this, opts => ({
+    ...opts,
+    transformer: {
+      from: raw => raw == null ? null : transformer.from(raw),
+      to: value => value == null ? null : transformer.to(value)
+    }
+  }))
   return this
 }
 

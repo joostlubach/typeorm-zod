@@ -9,7 +9,8 @@ export function mixin(_schema: z.ZodType, base?: AnyConstructor) {
 
 type MixedIn<S, Ctor extends AnyConstructor> = 
   & Ctor
-  & (new (...args: ConstructorParams<Ctor>) => InstanceType<Ctor> & z.infer<S> & {__schema: S})
+  & (new (...args: ConstructorParams<Ctor>) => InstanceType<Ctor> & z.infer<S>)
+  & {__schema: S}
 
 type ConstructorParams<C extends AnyConstructor> = C extends new (...args: infer A) => any ? A : never
 
