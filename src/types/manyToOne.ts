@@ -85,7 +85,7 @@ export function foreignKeyDecorator({relationName, nullable, options}: ForeignKe
   }
 }
 
-interface ForeignKeyOptions {
+export interface ForeignKeyOptions {
   relationName: string
   nullable?: boolean
   options?: Omit<JoinColumnOptions, 'name'>

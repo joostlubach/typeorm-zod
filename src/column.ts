@@ -148,7 +148,7 @@ function index<T extends z.ZodType<any>>(this: T, nameOrOptions?: string) {
   return this
 }
 
-function transformer<T extends z.ZodType<any>, Out>(this: T, transformer: ColumnTransformer<Out, z.output<T>>): z.ZodType<Out> {
+function db_transform<T extends z.ZodType<any>, Out>(this: T, transformer: ColumnTransformer<Out, z.output<T>>): z.ZodType<Out> {
   modifyColumnOptions(this, opts => ({
     ...opts,
     transformer: {
@@ -167,7 +167,7 @@ export interface ColumnTransformer<T, Raw> {
 const columnModifiers = {
   optional,
   nullable,
-  transformer,
+  db_transform,
   unique,
   db_default,
   index,
