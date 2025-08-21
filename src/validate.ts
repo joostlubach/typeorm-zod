@@ -20,7 +20,9 @@ export async function validateInsert(entity: object) {
   const schema = collectSchema(entity.constructor as AnyConstructor)
   assignForeignKeys(entity, schema)
 
-  const result = await insertSchema(schema).safeParseAsync(entity)
+  const result = await insertSchema(schema).safeParseAsync(entity, {
+    reportInput: true
+  })
   if (result.success) {
     Object.assign(entity, result.data)
   } else {
@@ -32,7 +34,9 @@ export async function validateUpdate(entity: object) {
   const schema = collectSchema(entity.constructor as AnyConstructor)
   assignForeignKeys(entity, schema)
 
-  const result = await updateSchema(schema).safeParseAsync(entity)
+  const result = await updateSchema(schema).safeParseAsync(entity, {
+    reportInput: true
+  })
   if (result.success) {
     Object.assign(entity, result.data)
   } else {
