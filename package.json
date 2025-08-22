@@ -32,13 +32,12 @@
     "typescript": "5.9.2"
   },
   "peerDependencies": {
-    "typeorm": "*"
+    "typeorm": "*",
+    "zod": "*"
   },
   "dependencies": {
     "casing": "^1.1.0",
-    "typeorm": "^0.3.26",
-    "ytil": "workspace:^",
-    "zod": "^4.0.17"
+    "ytil": "workspace:^"
   },
   "packageManager": "pnpm@9.9.0"
 }
