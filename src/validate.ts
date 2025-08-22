@@ -21,7 +21,7 @@ export async function validateInsert(entity: object) {
   assignForeignKeys(entity, schema)
 
   const result = await insertSchema(schema).safeParseAsync(entity, {
-    reportInput: true
+    reportInput: true,
   })
   if (result.success) {
     Object.assign(entity, result.data)
@@ -35,7 +35,7 @@ export async function validateUpdate(entity: object) {
   assignForeignKeys(entity, schema)
 
   const result = await updateSchema(schema).safeParseAsync(entity, {
-    reportInput: true
+    reportInput: true,
   })
   if (result.success) {
     Object.assign(entity, result.data)
