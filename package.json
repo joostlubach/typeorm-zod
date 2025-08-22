@@ -37,7 +37,9 @@
   },
   "dependencies": {
     "casing": "^1.1.0",
-    "ytil": "workspace:^"
+    "typeorm": "^0.3.26",
+    "ytil": "workspace:^",
+    "zod": "^4.0.17"
   },
   "packageManager": "pnpm@9.9.0"
 }
