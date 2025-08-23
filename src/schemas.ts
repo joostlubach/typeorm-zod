@@ -61,12 +61,12 @@ export function collectSchema(target: AnyConstructor): z.ZodObject {
   }
 }
 
-function fieldType(type: z.ZodType): FieldType {
+export function fieldType(type: z.ZodType): FieldType {
   const meta = getMetadata(type)
   return meta?.fieldType ?? FieldType.Column
 }
 
-function columnOptions(type: z.ZodType): Record<string, any> {
+export function columnOptions(type: z.ZodType): Record<string, any> {
   const meta = getMetadata(type)
   return meta?.options ?? {}
 }

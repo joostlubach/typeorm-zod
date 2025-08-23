@@ -153,8 +153,8 @@ function db_transform<T extends z.ZodType<any>, Out>(this: T, transformer: Colum
     ...opts,
     transformer: {
       from: raw => raw == null ? null : transformer.from(raw),
-      to: value => value == null ? null : transformer.to(value)
-    }
+      to:   value => value == null ? null : transformer.to(value),
+    },
   }))
   return this
 }

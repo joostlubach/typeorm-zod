@@ -1,5 +1,7 @@
 import {
   Column,
+  Index,
+  IndexOptions,
   JoinColumn,
   JoinColumnOptions,
   ManyToOne,
@@ -46,15 +48,25 @@ export interface ManyToOneColumnOptions {
   inverseSide: string | ((object: any) => any)
   foreignKey?: string
   nullable?: boolean
+  index?: boolean | string | IndexOptions
   options?: RelationOptions
 }
 
-export function manyToOneDecorator({entity, inverseSide, foreignKey: explicitForeignKey, nullable, options}: ManyToOneColumnOptions) {
+export function manyToOneDecorator({entity, inverseSide, foreignKey: explicitForeignKey, nullable, index, options}: ManyToOneColumnOptions) {
   return function (target: any, property: string | symbol) {
-    ManyToOne(entity, inverseSide, {...options, nullable: true})(target, property)
+    ManyToOne(entity, inverseSide, {...options, nullable})(target, property)
 
     const foreignKey = explicitForeignKey ?? config.foreignKeyNaming(property.toString())
     JoinColumn({name: foreignKey})(target, property)
+
+    // Yeah but try to remove this conditional and the types won't work anymore!!!
+    if (typeof index === 'string') {
+      Index(index)(target, property)
+    } else if (index === true) {
+      const name = config.indexNaming(property.toString())
+      Index(name)(target, property)
+    }
+
   }
 }
 
@@ -103,6 +115,17 @@ function cascade<T extends z.ZodType<any>>(this: T) {
       onDelete: 'CASCADE',
     },
   }))
+  return this
+}
+
+function index<T extends z.ZodType<any>>(this: T, nameOrOptions?: string) {
+  if (typeof nameOrOptions === 'string') {
+    modifyColumnOptions(this, opts => ({...opts, index: nameOrOptions}))
+  } else if (nameOrOptions != null) {
+    modifyColumnOptions(this, opts => ({...opts, index: nameOrOptions}))
+  } else {
+    modifyColumnOptions(this, opts => ({...opts, index: true}))
+  }
   return this
 }
 
