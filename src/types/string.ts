@@ -18,7 +18,20 @@ export function string(...args: any[]): StringColumn {
       ...options,
     },
     modifiers,
-  })
+  }).min(1)
+}
+
+const {
+  optional: orig_optional,
+  nullable: orig_nullable,
+} = z.string()
+
+function optional<T extends z.ZodString>(this: T) {
+  return orig_optional.call(this.min(0))
+}
+
+function nullable<T extends z.ZodString>(this: T) {
+  return orig_nullable.call(this.min(0))
 }
 
 function max<T extends z.ZodString>(this: T, maxLength: number) {
@@ -44,6 +57,8 @@ function ignoreCase<T extends z.ZodString>(this: T) {
 }
 
 const modifiers = {
+  optional,
+  nullable,
   max,
   length,
   collate,
