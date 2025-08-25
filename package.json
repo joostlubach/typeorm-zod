@@ -29,7 +29,7 @@
     "js-yaml": "^4.1.0",
     "rimraf": "^6.0.1",
     "tsc-alias": "^1.8.16",
-    "typescript": "5.9.2"
+    "typescript": "^5.9.2"
   },
   "peerDependencies": {
     "typeorm": "*",
@@ -39,7 +39,7 @@
     "casing": "^1.1.0",
     "typeorm": "^0.3.26",
     "ytil": "workspace:^",
-    "zod": "^4.0.17"
+    "zod": "^4.1.1"
   },
   "packageManager": "pnpm@9.9.0"
 }
