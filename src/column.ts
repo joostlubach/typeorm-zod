@@ -100,7 +100,11 @@ function extendModifier<T extends z.ZodType<any>, P extends keyof T, F extends(.
     try {
       return (modifier ?? (type as any)[prop]).call(type, ...args)
     } finally {
-      Object.defineProperty(type, prop, {value: extended, writable: true, enumerable: false})
+      Object.defineProperty(type, prop, {
+        value:      extended, 
+        writable:   true, 
+        enumerable: false,
+      })
     }
   }
 

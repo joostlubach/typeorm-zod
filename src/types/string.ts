@@ -21,17 +21,12 @@ export function string(...args: any[]): StringColumn {
   }).min(1)
 }
 
-const {
-  optional: orig_optional,
-  nullable: orig_nullable,
-} = z.string()
-
 function optional<T extends z.ZodString>(this: T) {
-  return orig_optional.call(this.min(0))
+  return this.optional.call(this instanceof z.ZodString ? this.min(0) : this)
 }
 
 function nullable<T extends z.ZodString>(this: T) {
-  return orig_nullable.call(this.min(0))
+  return this.nullable.call(this instanceof z.ZodString ? this.min(0) : this)
 }
 
 function max<T extends z.ZodString>(this: T, maxLength: number) {
