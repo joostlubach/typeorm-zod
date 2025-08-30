@@ -22,11 +22,15 @@ export function string(...args: any[]): StringColumn {
 }
 
 function optional<T extends z.ZodString>(this: T) {
-  return this.optional.call(this instanceof z.ZodString ? this.min(0) : this)
+  const optional = this.optional.call(this instanceof z.ZodString ? this.min(0) : this)
+  modifyColumnOptions(optional, opts => ({...opts, nullable: true}))
+  return optional
 }
 
 function nullable<T extends z.ZodString>(this: T) {
-  return this.nullable.call(this instanceof z.ZodString ? this.min(0) : this)
+  const nullable = this.nullable.call(this instanceof z.ZodString ? this.min(0) : this)
+  modifyColumnOptions(nullable, opts => ({...opts, nullable: true}))
+  return nullable
 }
 
 function max<T extends z.ZodString>(this: T, maxLength: number) {
