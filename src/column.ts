@@ -152,7 +152,7 @@ function index<T extends z.ZodType<any>>(this: T, nameOrOptions?: string) {
   return this
 }
 
-function db_transform<T extends z.ZodType<any>, Out>(this: T, transformer: ColumnTransformer<Out, z.output<T>>): z.ZodType<Out> {
+function db_transform<T extends z.ZodType<any>, Raw>(this: T, transformer: ColumnTransformer<z.output<T>, Raw>): T {
   modifyColumnOptions(this, opts => ({
     ...opts,
     transformer: {
