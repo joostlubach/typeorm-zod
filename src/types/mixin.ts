@@ -1,14 +1,14 @@
 import { AnyConstructor } from 'ytil'
 import { z } from 'zod'
 
-export function mixin<S, Ctor extends AnyConstructor>(schema: z.ZodType<S>, base: Ctor): MixedIn<typeof schema, Ctor>
-export function mixin<S>(schema: z.ZodType<S>): MixedIn<typeof schema, AnyConstructor>
-export function mixin(_schema: z.ZodType, base?: AnyConstructor) {
-  return base ?? Object
+export function mixin<S, Ctor extends AnyConstructor>(schema: z.ZodType<S>, Base: Ctor): MixedIn<typeof schema, Ctor>
+export function mixin<S>(schema: z.ZodType<S>): MixedIn<typeof schema, ObjectConstructor>
+export function mixin(_schema: z.ZodType, Base?: AnyConstructor) {
+  return Base ?? Object
 }
 
 type MixedIn<S, Ctor extends AnyConstructor> = 
-  & Ctor
+  & Omit<Ctor, 'new'>
   & (new (...args: ConstructorParams<Ctor>) => InstanceType<Ctor> & z.infer<S>)
   & {__schema: S}
 

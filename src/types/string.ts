@@ -5,7 +5,7 @@ import { buildColumnType, ColumnType } from '../column'
 import config from '../config'
 import { modifyColumnOptions } from '../registry'
 
-export function string<S extends string>(from: z.ZodType<S>, type?: 'varchar' | 'text', options?: ColumnOptions): StringColumn
+export function string<T>(from: z.ZodType<T>, type?: 'varchar' | 'text', options?: ColumnOptions): StringColumn
 export function string(type?: 'varchar' | 'text', options?: ColumnOptions): StringColumn
 export function string(...args: any[]): StringColumn {
   const from = args[0] instanceof z.ZodType ? args.shift() : z.string()
