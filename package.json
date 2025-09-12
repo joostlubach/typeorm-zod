@@ -25,6 +25,8 @@
     "test": "NODE_ENV=test jest"
   },
   "devDependencies": {
+    "@types/lodash": "^4.17.20",
+    "@types/pluralize": "^0.0.33",
     "copyfiles": "^2.4.1",
     "js-yaml": "^4.1.0",
     "rimraf": "^6.0.1",
@@ -37,6 +39,8 @@
   },
   "dependencies": {
     "casing": "^1.1.0",
+    "lodash": "^4.17.21",
+    "pluralize": "^8.0.0",
     "typeorm": "^0.3.26",
     "ytil": "workspace:^"
   },
