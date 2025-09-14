@@ -13,11 +13,11 @@ export function manyToMany<E>(
   entity: ((type?: any) => Constructor<E>) | string,
   inverseSide?: string | ((object: E) => any),
   options?: RelationOptions
-): ManyToManyColumn<z.ZodType<E>>
+): ManyToManyColumn<z.ZodType<E[]>>
 export function manyToMany<E>(
   entity: ((type?: any) => Constructor<E>) | string,
   options?: RelationOptions
-): ManyToManyColumn<z.ZodType<E>>
+): ManyToManyColumn<z.ZodType<E[]>>
 export function manyToMany(...args: any[]) {
   const entity = args.shift()
   const inverseSide = typeof args[0] === 'string' || isFunction(args[0]) ? args.shift() : undefined
