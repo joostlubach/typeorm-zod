@@ -131,7 +131,7 @@ function nullable<T extends z.ZodType<any>>(this: T) {
   return modified
 }
 
-function unique<T extends z.ZodType<any>>(this: T) {
+function unique<T extends z.ZodType<any>>(this: T, options: UniqueOptions = {}) {
   modifyColumnOptions(this, opts => ({...opts, unique: true}))
   return this
 }
@@ -180,6 +180,10 @@ const columnModifiers = {
 export type ColumnModifiers = typeof columnModifiers
 
 // #endregion
+
+export interface UniqueOptions {
+  scope?: string | string[]
+}
 
 /**
  * Specialized column type. All modifiers (that is, methods returning a new type) will be wrapped with the same
