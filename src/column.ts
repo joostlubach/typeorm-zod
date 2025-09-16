@@ -51,7 +51,7 @@ function columnDecoratorFactory(options: ColumnOptions): PropertyDecorator {
     indexDecorator?.(target, prop)
 
     const uniqueDecorator = buildUniqueDecorator(unique, tableName, field)
-    uniqueDecorator?.(target, prop)
+    uniqueDecorator?.(target)
   }
 }
 
@@ -70,7 +70,7 @@ export function buildIndexDecorator(arg: ColumnOptions['index'] | undefined, tab
   }
 }
 
-export function buildUniqueDecorator(arg: ColumnOptions['unique'] | undefined, tableName: string, field: string): PropertyDecorator | undefined {
+export function buildUniqueDecorator(arg: ColumnOptions['unique'] | undefined, tableName: string, field: string): ClassDecorator | undefined {
   if (arg == null) { return undefined }
 
   const options = isArray(arg) ? arg[1] : isPlainObject(arg) ? arg : {}
@@ -78,6 +78,8 @@ export function buildUniqueDecorator(arg: ColumnOptions['unique'] | undefined, t
 
   let name = isArray(arg) ? arg[0] : typeof arg === 'string' ? arg : undefined
   name ??= config.indexNaming?.(tableName, field, true)
+
+  console.log('UQ -->', tableName, field, name)
 
   if (name == null) {
     return Unique(fields)
@@ -212,11 +214,6 @@ function db_transform<T extends AnyColumnType, Raw>(this: T, transformer: Column
   return this
 }
 
-function derive<T extends AnyColumnType>(this: T, derive: string | ((entity: any) => z.infer<T>)): DerivedColumnType<T> {
-  storeMetadata(this as z.ZodType<any>, {derive})
-  return this as DerivedColumnType<T>
-}
-
 export interface ColumnTransformer<T, Raw> {
   to: (value: T) => Raw
   from: (raw: Raw) => T
@@ -229,7 +226,6 @@ const columnModifiers = {
   unique,
   db_transform,
   db_default,
-  derive,
 }
 
 export type ColumnModifiers = typeof columnModifiers
@@ -252,8 +248,6 @@ export type ColumnType<T extends z.ZodType<any>, Mod = {}> = T & ColumnModifiers
 }
 
 type AnyColumnType = ColumnType<any, {}>
-
-export type DerivedColumnType<T extends AnyColumnType> = T & {__derived: true}
 
 /**
  * Utility type to extract all modifiers (also the base `ColumnModifiers`) from a column type.

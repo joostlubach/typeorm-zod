@@ -2,6 +2,12 @@ import { z } from 'zod'
 
 import { ColumnModifiers } from './column'
 
+export type Shape = Record<string, ColumnType<any, any>>
+export type Derivations<S extends Shape> = {
+  [K in keyof S]?: Derivation<z.infer<S[K]>, S>
+}
+export type Derivation<T, S extends Shape> = (obj: z.infer<z.ZodObject<S>>) => T
+
 /**
  * Specialized column type. All modifiers (that is, methods returning a new type) will be wrapped with the same
  * modifiers as the base type.

@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { tryGetMetadata } from '../registry'
 import { symbols } from '../symbols'
 
-export function Schema(schema: z.ZodObject): ClassDecorator {
+export function EntitySchema(schema: z.ZodObject): ClassDecorator {
   return function (target: Function) {
     // Set the schema on the target class.
     Object.assign(target, {[symbols.schema]: schema})

@@ -4,7 +4,7 @@ import { z } from 'zod'
 import config from '../config'
 import { symbols } from '../symbols'
 import { validateInsert, validateUpdate } from '../validate'
-import { Schema } from './Schema'
+import { EntitySchema } from './EntitySchema'
 
 export function Entity(name: string, schema: z.ZodObject, options?: EntityOptions): ClassDecorator
 export function Entity(schema: z.ZodObject, options?: EntityOptions): ClassDecorator
@@ -18,7 +18,7 @@ export function Entity(...args: any[]): ClassDecorator {
 
   return function (target: Function) {
     // Invoke the tz.Schema decorator to set the schema on the target.
-    Schema(schema)(target)
+    EntitySchema(schema)(target)
 
     // Invoke the Entity decorator.
     if (name != null) {

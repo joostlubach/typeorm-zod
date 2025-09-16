@@ -1,2 +1,2 @@
 export * from './Entity'
-export * from './Schema'
+export * from './EntitySchema'

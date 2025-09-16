@@ -72,7 +72,7 @@ export function manyToOneDecorator({entity, inverseSide, foreignKey: explicitFor
     indexDecorator?.(target, property)
 
     const uniqueDecorator = buildUniqueDecorator(unique, tableName, field)
-    uniqueDecorator?.(target, property)
+    uniqueDecorator?.(target)
   }
 }
 
