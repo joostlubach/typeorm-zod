@@ -2,8 +2,9 @@ import { AnyConstructor, superConstructor } from 'ytil'
 import { z } from 'zod'
 
 import { FieldType, getMetadata } from './registry'
+import { mergeSchemas, Schema, schema } from './schema'
 import { symbols } from './symbols'
-import { mergeSchemas, modifySchema } from './util'
+import { modifySchema } from './util'
 
 /**
  * Builds a schema for inserting an entity from an entity schema.
@@ -11,10 +12,11 @@ import { mergeSchemas, modifySchema } from './util'
  * - Generated fields are allowed but made optional.
  * - Relations are omitted.
  */
-export function insertSchema(schema: z.ZodObject): z.ZodObject {
-  return modifySchema(schema, (type, _key) => {
+export function insertSchema(schema: Schema<any, any>): z.ZodObject {
+  return modifySchema(schema, (type, key) => {
     if (type instanceof z.ZodReadonly) { return null }
     if (columnOptions(type).generated != null) { return null }
+    if (key in schema.derivations) { return null }
 
     switch (fieldType(type)) {
     case FieldType.Relation: return null
@@ -32,10 +34,11 @@ export function insertSchema(schema: z.ZodObject): z.ZodObject {
  * - Contrary to what might make sense, regular columns are not made optional. This is because
  *   the full entity is validated, not only the updates.
  */
-export function updateSchema(schema: z.ZodObject): z.ZodObject {
-  return modifySchema(schema, type => {
+export function updateSchema(schema: Schema<any, any>): z.ZodObject {
+  return modifySchema(schema, (type, key) => {
     if (type instanceof z.ZodReadonly) { return null }
     if (columnOptions(type).generated != null) { return null }
+    if (key in schema.derivations) { return null }
 
     switch (fieldType(type)) {
     case FieldType.Relation: return null
@@ -45,10 +48,10 @@ export function updateSchema(schema: z.ZodObject): z.ZodObject {
   })
 }
 
-export function collectSchema(target: AnyConstructor): z.ZodObject {
+export function collectSchema(target: AnyConstructor): Schema<any, any> {
   const superCtor = superConstructor(target)
   const parentSchema = superCtor == null ? undefined : collectSchema(superCtor)
-  const ownSchema = (target as any)[symbols.schema] as z.ZodObject | undefined
+  const ownSchema = (target as any)[symbols.schema] as Schema<any, any> | undefined
   
   if (parentSchema == null && ownSchema != null) {
     return ownSchema
@@ -57,7 +60,7 @@ export function collectSchema(target: AnyConstructor): z.ZodObject {
   } else if (parentSchema != null && ownSchema != null) {
     return mergeSchemas(parentSchema, ownSchema)
   } else {
-    return z.object({})
+    return schema({})
   }
 }
 

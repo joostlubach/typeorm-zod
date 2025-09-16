@@ -2,7 +2,7 @@ import { FindOptionsWhere } from 'typeorm'
 import { AnyConstructor, ConstructorParams } from 'ytil'
 import { z } from 'zod'
 
-import { derivationsOf, schema, Schema, shapeOf } from './schema'
+import { attributesOf, derivationsOf, inputOf, schema, Schema, schemaOf, shapeOf } from './schema'
 import { symbols } from './symbols'
 import { boolean, int, string } from './types'
 
@@ -59,46 +59,6 @@ export type Mixin<S extends Schema<any, any>, Base extends AnyConstructor> = (
     }
   )
 )
-
-/**
- * Extracts the schema from a given entity instance or class.
- * */
-export type schemaOf<T> =
-  T extends { [symbols.schema]: infer S extends Schema<any, any> }
-    ? S
-    : never
-
-/**
- * Retrieves the attributes of any instance of entities created with the given schema. Derived properties
- * are marked as readonly here.
- */
-export type attributesOf<T> = schemaOf<T> extends never
-  ? T
-  : markDerivedAsReadonly<schemaOf<T>>
-
-/**
- * Retrieves the input shape of entities created with the given schema. Derived properties are excluded
- * here.
- */
-export type inputOf<T> = schemaOf<T> extends never
-  ? T
-  : omitDerived<schemaOf<T>>
-
-/**
- * Utility type to mark all derived properties from the schema as readonly.
- */
-type markDerivedAsReadonly<S extends Schema<any, any> | never> = S extends never ? never : {
-  [K in keyof shapeOf<S> as (K extends keyof derivationsOf<S> ? never : K)]: z.infer<shapeOf<S>[K]>
-} & {
-  readonly [K in keyof shapeOf<S> as (K extends keyof derivationsOf<S> ? K : never)]: z.infer<shapeOf<S>[K]>
-}
-
-/**
- * Utility type to omit all derived properties from the schema.
- */
-type omitDerived<S extends Schema<any, any> | never> = S extends never ? never : {
-  [K in keyof shapeOf<S> as (K extends keyof derivationsOf<S> ? never : K)]: z.infer<shapeOf<S>[K]>
-}
 
 // #region Type assertions
 
