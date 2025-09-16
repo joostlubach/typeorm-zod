@@ -1,6 +1,8 @@
 import { Column, ColumnOptions } from 'typeorm'
 import { z } from 'zod'
 
+import { ColumnType } from './column'
+
 const rootMap = new WeakMap<z.ZodType<any>, RootLink>()
 const registry = new WeakMap<z.ZodType<any>, Metadata<any, any>>()
 
@@ -27,18 +29,21 @@ export function getMetadata<Opts, Mod>(leaf: z.ZodType<any>): Metadata<Opts, Mod
   return meta as Metadata<Opts, Mod>
 }
 
-export function storeMetadata<Opts, Mod>(leaf: z.ZodType<any>, metadata: Metadata<Opts, Mod>): void {
+export function storeMetadata<Opts, Mod>(leaf: z.ZodType<any>, metadata: Partial<Metadata<Opts, Mod>>): void {
   const root = rootMap.get(leaf)
   if (root == null) {
     throw new Error("Not a column type")
   }
 
-  registry.set(root.root, metadata)
+  registry.set(root.root, {
+    ...registry.get(root.root),
+    ...metadata,
+  } as Metadata<Opts, Mod>)
 }
 
 
 export function modifyMetadata<Opts, Mod>(
-  type: z.ZodType<any>,
+  type: ColumnType<any>,
   modify: (prev: Metadata<Opts, Mod>) => Metadata<Opts, Mod>,
 ) {
   const prev = getMetadata<Opts, Mod>(type)
@@ -46,7 +51,7 @@ export function modifyMetadata<Opts, Mod>(
 }
 
 export function modifyColumnOptions<Opts extends Record<string, any> = ColumnOptions>(
-  type: z.ZodType<any>,
+  type: ColumnType<any>,
   modify: (upstream: Opts) => Opts,
 ) {
   modifyMetadata<Opts, any>(type, prev => {
@@ -66,6 +71,7 @@ export interface Metadata<Opts, Mod> {
   decoratorFactory: (options: Opts) => PropertyDecorator
   options: Opts
   modifiers: Mod
+  derive: string | Function
 }
 
 export enum FieldType {

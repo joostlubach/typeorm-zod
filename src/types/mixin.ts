@@ -2,7 +2,7 @@ import { FindOptionsWhere } from 'typeorm'
 import { AnyConstructor } from 'ytil'
 import { z } from 'zod'
 
-import { derived } from './derived'
+import { boolean } from './boolean'
 import { int } from './number'
 import { string } from './string'
 
@@ -51,7 +51,7 @@ const base = z.object({
 
 const user = z.object({
   email: string(z.email()),
-  active: derived(() => true)
+  active: boolean().derive(() => true)
 })
 
 class Base extends mixin(base) {}

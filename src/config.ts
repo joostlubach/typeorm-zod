@@ -3,7 +3,7 @@ import { isFunction } from 'ytil'
 
 export interface Config {
   foreignKeyNaming: ForeignKeyNaming
-  indexNaming: IndexNaming
+  indexNaming: IndexNaming | null
 
   collation: {
     default: string,
@@ -20,16 +20,16 @@ export namespace ForeignKeyNaming {
   export const SNAKE = (relationName: string) => `${snakeize(relationName)}_id`
 }
 
-export type IndexNaming = (field: string) => string
+export type IndexNaming = (tableName: string, field: string, unique: boolean) => string
 
 export namespace IndexNaming {
-  export const CAMEL = (field: string) => `IDX_${camelize(field)}`
-  export const SNAKE = (field: string) => `IDX_${snakeize(field)}`
+  export const CAMEL = (tableName: string, field: string, unique: boolean) => `${unique ? 'UQ' : 'IDX'}_${camelize(tableName)}_${camelize(field)}`
+  export const SNAKE = (tableName: string, field: string, unique: boolean) => `${unique ? 'UQ' : 'IDX'}_${camelize(tableName)}_${snakeize(field)}`
 }
 
 const config: Config = {
   foreignKeyNaming: ForeignKeyNaming.SNAKE,
-  indexNaming:      IndexNaming.SNAKE,
+  indexNaming:      null,
 
   collation: {
     default:    'utf8mb4_0900_as_cs',

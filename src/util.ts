@@ -1,5 +1,15 @@
+import { snakeCase } from 'lodash'
+import { getMetadataArgsStorage, ObjectType } from 'typeorm'
 import { isFunction, isObject, objectEntries } from 'ytil'
 import { z } from 'zod'
+
+export function getTypeORMTableName(Entity: ObjectType<object>) {
+  const {tables} = getMetadataArgsStorage() 
+  const entry = tables.find(it => it.target === Entity)
+  if (entry?.name != null) { return entry.name }
+
+  return snakeCase(Entity.name)
+}
 
 export function modifySchema(schema: z.ZodObject, modifier: (type: z.ZodType, key: string) => z.ZodType | null): z.ZodObject {
   const shape: Record<string, z.ZodType> = {}

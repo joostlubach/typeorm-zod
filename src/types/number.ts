@@ -19,12 +19,10 @@ export function bigint(): IntColumn {
   })
 }
 
-export function float(initialPrecision?: number, initialScale?: number): FloatColumn {
+export function float(type: 'float4' | 'float8' = 'float4'): FloatColumn {
   return buildColumnType(z.number(), {
     options: {
-      type:      'float',
-      precision: initialPrecision,
-      scale:     initialScale,
+      type,
     },
     modifiers: modifiers.float,
   })
