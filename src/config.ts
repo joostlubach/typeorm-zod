@@ -6,6 +6,7 @@ import * as typemaps from './typemaps'
 
 export interface Config {
   foreignKeyNaming: ForeignKeyNaming
+  foreignKeyConstraintNaming: ForeignKeyConstraintNaming
   indexNaming: IndexNaming | null
 
   typemap: Typemap,
@@ -23,6 +24,13 @@ export type ForeignKeyNaming = (relationName: string) => string
 export namespace ForeignKeyNaming {
   export const CAMEL = (relationName: string) => `${camelize(relationName)}Id`
   export const SNAKE = (relationName: string) => `${snakeize(relationName)}_id`
+}
+
+export type ForeignKeyConstraintNaming = (tableName: string, field: string) => string
+
+export namespace ForeignKeyConstraintNaming {
+  export const CAMEL = (tableName: string, field: string) => `FK_${camelize(tableName)}_${camelize(field)}`
+  export const SNAKE = (tableName: string, field: string) => `FK_${camelize(tableName)}_${snakeize(field)}`
 }
 
 export type IndexNaming = (tableName: string, field: string, unique: boolean) => string
@@ -47,6 +55,7 @@ export interface Typemap {
 
 const config: Config = {
   foreignKeyNaming: ForeignKeyNaming.SNAKE,
+  foreignKeyConstraintNaming: ForeignKeyConstraintNaming.SNAKE,
   indexNaming:      null,
 
   typemap: typemaps.postgres,

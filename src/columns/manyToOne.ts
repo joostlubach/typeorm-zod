@@ -44,6 +44,8 @@ export class ManyToOneColumn<E extends object> extends Column<z.ZodType<E | unde
     }
 
     protected readonly foreignKey?: string
+    protected readonly referencedColumnName?: string
+    protected readonly foreignKeyConstraintName?: string
 
     public cascade() {
       this.options.onDelete = 'CASCADE'
@@ -68,10 +70,16 @@ export class ManyToOneColumn<E extends object> extends Column<z.ZodType<E | unde
 
         ManyToOne(entity, inverseSide, options)(target, property)
 
-        const foreignKey = column.foreignKey ?? config.foreignKeyNaming(field)
-        JoinColumn({name: foreignKey})(target, property)
-
         const tableName = getTypeORMTableName(target.constructor)
+        const foreignKey = column.foreignKey ?? config.foreignKeyNaming(field)
+        const referencedColumnName = column.referencedColumnName
+        const foreignKeyConstraintName = column.foreignKeyConstraintName ?? config.foreignKeyConstraintNaming?.(tableName, field)
+        JoinColumn({
+          name: foreignKey,
+          referencedColumnName,
+          foreignKeyConstraintName, 
+        })(target, property)
+
         const indexDecorator = column.buildIndexDecorator(tableName, field)
         indexDecorator?.(target, property)
       }
@@ -107,14 +115,6 @@ export class ForeignKeyColumn<T extends z.ZodType<any>> extends Column<T> {
 
     return (target: any, name: string | symbol) => {
       if (typeof name !== 'string') { return }
-
-      const {
-        relationName,
-        options
-      } = column
-
-      // Place a @JoinColumn() on the relationship itself.
-      JoinColumn({name, ...options})(target, relationName)
 
       // Place a regular @Column() on this column.
       typeorm_Column('int', {nullable: column._nullable})(target, name)
