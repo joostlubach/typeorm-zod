@@ -1,21 +1,21 @@
 import { FindOptionsWhere } from 'typeorm'
 import { z } from 'zod'
 
-import { boolean, int, string } from './columns'
+import { boolean, int32, string } from './columns'
 import { mixin } from './mixin'
 import { attributesOf, columnsOf, derivationsOf, inputOf, schema, schemaOf } from './schema'
 
 // #region Type assertions
 
 const base = schema({
-  id: int()
+  id: int32()
 })
 
 const user = schema({
   email: string(z.email()),
   active: boolean()
 }).derive({
-  active: () => true
+  active: (obj) => obj.email != null
 })
 
 class Base extends mixin(base) {}
@@ -132,9 +132,66 @@ const _where3b: FindOptionsWhere<User3> = {email: 3}
 
 // #region Schema
 
-const t1 = int()
+const t1 = int32()
 const t2 = t1.nonnegative()
 const t3 = t2.nullable()
 const t4 = t3.index()
+
+const s1_ok1 = schema({
+  foo: string(),
+}).derive({
+  foo: () => 'test'
+})
+
+const s1_ok2 = schema({
+  foo: string().optional(),
+}).derive({
+  foo: () => undefined
+})
+
+const s1_ok3 = schema({
+  foo: string().optional(),
+}).derive({
+  foo: () => null
+})
+
+const s1_ok4 = schema({
+  foo: string().optional(),
+}).derive({
+  foo: () => 'test'
+})
+
+const s1_ok5 = schema({
+  foo: string().nullable(),
+}).derive({
+  foo: () => null
+})
+
+const s1_ok6 = schema({
+  foo: string().nullable(),
+}).derive({
+  foo: () => 'test'
+})
+
+const s1_err1 = schema({
+  foo: string(),
+}).derive({
+  // @ts-expect-error
+  foo: () => null
+})
+
+const s1_err2 = schema({
+  foo: string(),
+}).derive({
+  // @ts-expect-error
+  foo: () => 1
+})
+
+const s1_err3 = schema({
+  foo: string().optional(),
+}).derive({
+  // @ts-expect-error
+  foo: () => 1
+})
 
 // #endregion

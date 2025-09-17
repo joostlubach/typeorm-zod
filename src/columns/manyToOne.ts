@@ -12,6 +12,7 @@ import { z } from 'zod'
 import { Column } from '../column'
 import config from '../config'
 import { FieldType } from '../types'
+import { getTypeORMTableName } from '../util'
 
 // #region manyToOne
 
@@ -29,7 +30,7 @@ export function manyToOne(...args: any[]): ManyToOneColumn<z.ZodType<any | undef
   const inverseSide = typeof args[0] === 'string' || isFunction(args[0]) ? args.shift() : undefined
   const options: RelationOptions = args.shift() ?? {}
 
-  return new ManyToOneColumn(entity, inverseSide, undefined, options)
+  return new ManyToOneColumn(entity, inverseSide, options)
 }
 
 export class ManyToOneColumn<E extends object> extends Column<z.ZodType<E | undefined>> {
@@ -37,11 +38,12 @@ export class ManyToOneColumn<E extends object> extends Column<z.ZodType<E | unde
     constructor(
       protected readonly entity: string | ((type?: any) => ObjectType<any>),
       protected readonly inverseSide: string | ((object: any) => any),
-      protected readonly foreignKey?: string,
       protected readonly options: RelationOptions = {}
     ) {
       super(z.object() as z.ZodType<E>, {})
     }
+
+    protected readonly foreignKey?: string
 
     public cascade() {
       this.options.onDelete = 'CASCADE'
@@ -54,28 +56,25 @@ export class ManyToOneColumn<E extends object> extends Column<z.ZodType<E | unde
     }
 
     public buildFieldDecorator(field: string) {
-      const {
-        entity,
-        inverseSide,
-        foreignKey: this_foreignKey,
-        options
-      } = this
-
-      const indexDecorator = this.buildIndexDecorator()
+      const column = this
 
       return function (target: any, property: string | symbol) {
+        const {
+          entity,
+          inverseSide,
+          options
+        } = column
+
+
         ManyToOne(entity, inverseSide, options)(target, property)
 
-        const foreignKey = this_foreignKey ?? config.foreignKeyNaming(field)
+        const foreignKey = column.foreignKey ?? config.foreignKeyNaming(field)
         JoinColumn({name: foreignKey})(target, property)
 
+        const tableName = getTypeORMTableName(target.constructor)
+        const indexDecorator = column.buildIndexDecorator(tableName, field)
         indexDecorator?.(target, property)
       }
-    }
-
-    public buildClassDecorator(field: string) {
-      const uniqueDecorator = this.buildUniqueDecorator(field)
-      return uniqueDecorator
     }
 }
 
@@ -99,37 +98,29 @@ export class ForeignKeyColumn<T extends z.ZodType<any>> extends Column<T> {
 
   private _nullable: boolean = false
   public nullable() {
-    return new NullableForeignKeyColumn(
-      this.zod.nullable(),
-      this.relationName,
-      this.options
-    )
+    this._nullable = true
+    return super.nullable()
   }
 
   public buildFieldDecorator(field: string): PropertyDecorator {
-    const {
-      relationName,
-      _nullable: this_nullable,
-      options
-    } = this
+    const column = this
 
-      return (target: any, name: string | symbol) => {
+    return (target: any, name: string | symbol) => {
       if (typeof name !== 'string') { return }
+
+      const {
+        relationName,
+        options
+      } = column
 
       // Place a @JoinColumn() on the relationship itself.
       JoinColumn({name, ...options})(target, relationName)
 
       // Place a regular @Column() on this column.
-      typeorm_Column('int', {nullable: this_nullable})(target, name)
+      typeorm_Column('int', {nullable: column._nullable})(target, name)
     }
   }
 
-}
-
-export class NullableForeignKeyColumn<T extends z.ZodNullable<any>> extends ForeignKeyColumn<T> {
-  constructor(base: T, relationName: string, options: Omit<JoinColumnOptions, 'name'> = {}) {
-    super(base, relationName, options)
-  }
 }
 
 export interface ForeignKeyOptions {

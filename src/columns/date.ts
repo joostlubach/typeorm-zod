@@ -1,17 +1,21 @@
 import { z } from 'zod'
 
 import { Column, ColumnOptions, ColumnType } from '../column'
+import config from '../config'
 
-export function date(typeOrOptions?: ColumnType | ColumnOptions) {
-  return new DateColumn(typeOrOptions)
+export function date(options?: ColumnType | ColumnOptions) {
+  return new DateColumn(options)
 }
 
 export class DateColumn extends Column<z.ZodDate> {
 
   constructor(
-    typeOrOptions?: ColumnType | ColumnOptions
+    options?: ColumnOptions
   ) {
-    super(z.date(), typeOrOptions)
+    super(z.date(), {
+      type: config.typemap.date,
+      ...options
+    })
   }
 
 }

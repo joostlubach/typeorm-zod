@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { Column, ColumnOptions } from '../column'
+import config from '../config'
 
 export function boolean(options?: ColumnOptions): Column<z.ZodBoolean> {
   return new BooleanColumn(options)
@@ -8,6 +9,9 @@ export function boolean(options?: ColumnOptions): Column<z.ZodBoolean> {
 
 export class BooleanColumn extends Column<z.ZodBoolean> {
   constructor(options?: ColumnOptions) {
-    super(z.boolean(), {type: 'boolean', ...options})
+    super(z.boolean(), {
+      type: config.typemap.boolean,
+      ...options
+    })
   }
 }

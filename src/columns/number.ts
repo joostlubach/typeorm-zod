@@ -1,35 +1,28 @@
-import { ColumnOptions } from 'typeorm'
+import { ColumnOptions, ColumnType } from 'typeorm'
 import { z } from 'zod'
 
 import { Column, modifier } from '../column'
+import config from '../config'
 
 // #region Number
 
-export function int(options: ColumnOptions = {}): IntColumn {
-  return new NumberColumn(z.int(), {...options, type: 'int8'})
+export function number(type: ColumnType = config.typemap.number, options: ColumnOptions = {}): NumberColumn {
+  return new NumberColumn(z.number(), {...options, type})
 }
 
-export function int4(options: ColumnOptions = {}): Int32Column {
-  return new NumberColumn(z.int32(), {...options, type: 'int4'})
+export function int32(options: ColumnOptions = {}): Int32Column {
+  return new NumberColumn(z.int32(), {...options, type: config.typemap.int32})
 }
 
-export function uint8(options: ColumnOptions = {}): UInt32Column {
-  return new NumberColumn(z.uint32(), {...options, type: 'int8'})
+export function float32(options: ColumnOptions = {}): Float32Column {
+  return new NumberColumn(z.float32(), {...options, type: config.typemap.float32})
 }
 
-export function float(options: ColumnOptions = {}): Float32Column {
-  return new NumberColumn(z.float32(), {...options, type: 'float4'})
+export function float64(options: ColumnOptions = {}): Float64Column {
+  return new NumberColumn(z.float64(), {...options, type: config.typemap.float64})
 }
 
-export function float4(options: ColumnOptions = {}): Float32Column {
-  return new NumberColumn(z.float32(), {...options, type: 'float4'})
-}
-
-export function float8(options: ColumnOptions = {}): Float64Column {
-  return new NumberColumn(z.float64(), {...options, type: 'float8'})
-}
-
-export class NumberColumn<T extends z.ZodNumber> extends Column<T> {
+export class NumberColumn<T extends z.ZodNumber = z.ZodNumber> extends Column<T> {
 
   constructor(
     base: T,
@@ -38,21 +31,21 @@ export class NumberColumn<T extends z.ZodNumber> extends Column<T> {
     super(base, options)
   }
 
-  public readonly gt = modifier(() => this.zod, 'gt')
-  public readonly gte = modifier(() => this.zod, 'gte')
-  public readonly min = modifier(() => this.zod, 'min')
-  public readonly lt = modifier(() => this.zod, 'lt')
-  public readonly lte = modifier(() => this.zod, 'lte')
-  public readonly max = modifier(() => this.zod, 'max')
-  public readonly int = modifier(() => this.zod, 'int')
-  public readonly safe = modifier(() => this.zod, 'safe')
-  public readonly positive = modifier(() => this.zod, 'positive')
-  public readonly nonnegative = modifier(() => this.zod, 'nonnegative')
-  public readonly negative = modifier(() => this.zod, 'negative')
-  public readonly nonpositive = modifier(() => this.zod, 'nonpositive')
-  public readonly multipleOf = modifier(() => this.zod, 'multipleOf')
-  public readonly step = modifier(() => this.zod, 'step')
-  public readonly finite = modifier(() => this.zod, 'finite')
+  public readonly gt = modifier<this, 'gt'>(() => this.zod, 'gt')
+  public readonly gte = modifier<this, 'gte'>(() => this.zod, 'gte')
+  public readonly min = modifier<this, 'min'>(() => this.zod, 'min')
+  public readonly lt = modifier<this, 'lt'>(() => this.zod, 'lt')
+  public readonly lte = modifier<this, 'lte'>(() => this.zod, 'lte')
+  public readonly max = modifier<this, 'max'>(() => this.zod, 'max')
+  public readonly int = modifier<this, 'int'>(() => this.zod, 'int')
+  public readonly safe = modifier<this, 'safe'>(() => this.zod, 'safe')
+  public readonly positive = modifier<this, 'positive'>(() => this.zod, 'positive')
+  public readonly nonnegative = modifier<this, 'nonnegative'>(() => this.zod, 'nonnegative')
+  public readonly negative = modifier<this, 'negative'>(() => this.zod, 'negative')
+  public readonly nonpositive = modifier<this, 'nonpositive'>(() => this.zod, 'nonpositive')
+  public readonly multipleOf = modifier<this, 'multipleOf'>(() => this.zod, 'multipleOf')
+  public readonly step = modifier<this, 'step'>(() => this.zod, 'step')
+  public readonly finite = modifier<this, 'finite'>(() => this.zod, 'finite')
 
   public precision(precision: number) {
     this.options.precision = precision
@@ -89,12 +82,12 @@ export class BigIntColumn extends Column<z.ZodBigInt> {
     super(z.bigint(), options)
   }
 
-  public readonly gt = modifier(() => this.zod, 'gt')
-  public readonly gte = modifier(() => this.zod, 'gte')
-  public readonly min = modifier(() => this.zod, 'min')
-  public readonly lt = modifier(() => this.zod, 'lt')
-  public readonly lte = modifier(() => this.zod, 'lte')
-  public readonly max = modifier(() => this.zod, 'max')
+  public readonly gt = modifier<this, 'gt'>(() => this.zod, 'gt')
+  public readonly gte = modifier<this, 'gte'>(() => this.zod, 'gte')
+  public readonly min = modifier<this, 'min'>(() => this.zod, 'min')
+  public readonly lt = modifier<this, 'lt'>(() => this.zod, 'lt')
+  public readonly lte = modifier<this, 'lte'>(() => this.zod, 'lte')
+  public readonly max = modifier<this, 'max'>(() => this.zod, 'max')
 
 }
 

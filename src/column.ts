@@ -7,23 +7,30 @@ import {
   ObjectType,
   Unique,
 } from 'typeorm'
-import { AnyFunction, MethodsOf, wrapArray } from 'ytil'
+import { AnyFunction, Constructor, wrapArray } from 'ytil'
 import { z } from 'zod'
 
+import config from './config'
 import { FieldType } from './types'
+import { getTypeORMTableName } from './util'
 
 export class Column<T extends z.ZodType<any>> {
 
   constructor(
-    public readonly zod: T,
+    zod: T,
     typeOrOptions?: ColumnType | ColumnOptions
   ) {
+    this._zod = zod
     this.options = typeof typeOrOptions === 'string'
       ? {type: typeOrOptions}
       : (typeOrOptions ?? {})
   }
 
+  private _zod: T
+  public get zod() { return this._zod }
+
   protected readonly options: ColumnOptions
+
 
   public get isReadOnly() {
     if (this.isGenerated) { return true }
@@ -38,21 +45,34 @@ export class Column<T extends z.ZodType<any>> {
     return FieldType.Column
   }
 
+  protected modify(zod: T) {
+    this._zod = zod
+  }
+
   // #region Zod passthroughs
   
-  public optional() {
-    const optional = this.zod.optional()
-    return new Column(optional, {...this.options, nullable: true})
+  public optional(): Optional<T, this> {
+    this.options.nullable = true
+
+    const optional = this.zod.optional().nullable()
+    return new Proxy(this, {
+      get: (target, prop, receiver) => prop === 'zod' ? optional : Reflect.get(target, prop, receiver)
+    }) as Optional<T, this>
   }
 
-  public nullable() {
-    const nullable = this.zod.nullable()
-    return new Column(nullable, {...this.options, nullable: true})
+  public nullable(): Nullable<T, this> {
+    this.options.nullable = true
+
+    const nullable = this.zod.optional()
+    return new Proxy(this, {
+      get: (target, prop, receiver) => prop === 'zod' ? nullable : Reflect.get(target, prop, receiver)
+    }) as Nullable<T, this>
   }
 
-  public default(value: z.output<T>) {
-    const withDefault = this.zod.default(value)
-    return new DefaultColumn(withDefault, this.options)
+  public default(value: z.output<T>): Default<T, this> {
+    return new Proxy(this, {
+      get: (target, prop, receiver) => prop === 'zod' ? target.zod.default(value) : Reflect.get(target, prop, receiver)
+    }) as Default<T, this>
   }
 
   public check(...checks: Array<z.core.CheckFn<z.core.output<T>> | z.core.$ZodCheck<z.core.output<T>>>) {
@@ -122,22 +142,27 @@ export class Column<T extends z.ZodType<any>> {
     return (target: object, prop: string | symbol) => {
       typeorm_Column(this.options)(target, prop)
 
-      const indexDecorator = this.buildIndexDecorator()
+      const tableName = getTypeORMTableName(target.constructor)
+      const indexDecorator = this.buildIndexDecorator(tableName, prop.toString()  )
       indexDecorator?.(target, prop)
     }
   }
 
-  public buildClassDecorators(field: string): ClassDecorator {
+  public buildClassDecorator(field: string): ClassDecorator {
     return (target: ObjectType<object>) => {
-      const uniqueDecorator = this.buildUniqueDecorator(field)
+      const tableName = getTypeORMTableName(target)
+      const uniqueDecorator = this.buildUniqueDecorator(tableName, field)
       uniqueDecorator?.(target)
     }
   }
 
-  public buildIndexDecorator(): PropertyDecorator | null {
+  public buildIndexDecorator(tableName: string, field: string): PropertyDecorator | null {
     if (this._index == null) { return null }
 
-    const [name, options] = this._index
+    const [
+      name = config.indexNaming?.(tableName, field, false),
+      options
+    ] = this._index
     if (name == null) {
       return Index(options)
     } else {
@@ -145,10 +170,13 @@ export class Column<T extends z.ZodType<any>> {
     }
   }
 
-  public buildUniqueDecorator(field: string): ClassDecorator | null {
+  public buildUniqueDecorator(tableName: string, field: string): ClassDecorator | null {
     if (this._unique == null) { return null }
 
-    const [name, options] = this._unique
+    const [
+      name = config.indexNaming?.(tableName, field, true),
+      options
+    ] = this._unique
     const fields = options.scope != null ? [...wrapArray(options.scope), field] : [field]
 
     if (name == null) {
@@ -161,45 +189,32 @@ export class Column<T extends z.ZodType<any>> {
   // #endregion
 }
 
-export class OptionalColumn<T extends z.ZodOptional<any>> extends Column<T> {
-  constructor(base: T, typeOrOptions?: ColumnType | ColumnOptions) {
-    super(base, typeOrOptions)
-  }
-}
-
-export class NullableColumn<T extends z.ZodNullable<any>> extends Column<T> {
-  constructor(base: T, typeOrOptions?: ColumnType | ColumnOptions) {
-    super(base, typeOrOptions)
-  }
-}
-
-export class DefaultColumn<T extends z.ZodDefault<any>> extends Column<T> {
-  constructor(base: T, typeOrOptions?: ColumnType | ColumnOptions) {
-    super(base, typeOrOptions)
-  }
-}
+export type Optional<T extends z.ZodType<any>, C extends Column<T>> = C & {zod: z.ZodOptional<T>}
+export type Nullable<T extends z.ZodType<any>, C extends Column<T>> = C & {zod: z.ZodNullable<T>}
+export type Default<T extends z.ZodType<any>, C extends Column<T>> = C & {zod: z.ZodDefault<T>}
 
 export type ColumnType = Exclude<typeorm_ColumnType, StringConstructor | NumberConstructor | BooleanConstructor | ObjectConstructor | BufferConstructor | DateConstructor>
 export type ColumnOptions = typeorm_ColumnOptions
 
-export function modifier<C extends Column<any>, K extends keyof MethodsOf<zodOf<C>>>(
-  target: () => zodOf<C>,
+export function modifier<C extends Column<any>, K extends keyof C['zod']>(
+  target: () => C['zod'],
   key: K
-): ColumnModifier<zodOf<C>[K]> {
+): ColumnModifier<C['zod'][K]> {
   return function (this: Column<any>, ...args: any[]) {
     const tgt = target()
     const method = tgt[key] as AnyFunction
     const retval = method.call(tgt, ...args)
-    if (retval !== this) {
-      throw new Error("Modifier returns different instance")
+    if (retval === this.zod) { return this }
+    if (retval instanceof z.ZodType) {
+      const ColumnClass = this.constructor as Constructor<Column<any>>
+      return new ColumnClass(retval, this.options)
+    } else {
+      return retval
     }
-
-    return this
   }
 }
 
 type ColumnModifier<F extends (...args: any[]) => z.ZodType<any>> = (...args: Parameters<F>) => Column<ReturnType<F>>
-type zodOf<C extends Column<any>> = C extends Column<infer T> ? T : never
 
 export interface UniqueOptions {
   scope?: string | string[]

@@ -1,9 +1,14 @@
 import { camelize, snakeize } from 'casing'
+import { ColumnType } from 'typeorm'
 import { isFunction } from 'ytil'
+
+import * as typemaps from './typemaps'
 
 export interface Config {
   foreignKeyNaming: ForeignKeyNaming
   indexNaming: IndexNaming | null
+
+  typemap: Typemap,
 
   collation: {
     default: string,
@@ -27,9 +32,24 @@ export namespace IndexNaming {
   export const SNAKE = (tableName: string, field: string, unique: boolean) => `${unique ? 'UQ' : 'IDX'}_${camelize(tableName)}_${snakeize(field)}`
 }
 
+export interface Typemap {
+  boolean: ColumnType
+  number: ColumnType
+  int32: ColumnType
+  float: ColumnType
+  float32: ColumnType
+  float64: ColumnType
+  string: ColumnType
+  binary: ColumnType
+  date: ColumnType
+  timestamp: ColumnType
+}
+
 const config: Config = {
   foreignKeyNaming: ForeignKeyNaming.SNAKE,
   indexNaming:      null,
+
+  typemap: typemaps.postgres,
 
   collation: {
     default:    'utf8mb4_0900_as_cs',
