@@ -38,17 +38,17 @@ export class Schema<S extends ColumnShape, D extends Derivations<S> = {}> {
     this.uniques.push([name, columnNames, options])
   }
 
-  public check(...checks: Array<z.core.CheckFn<z.core.output<this>> | z.core.$ZodCheck<z.core.output<this>>>) {
+  public check(...checks: Array<z.core.CheckFn<output<this>> | z.core.$ZodCheck<output<this>>>) {
     this.zod.check(...checks)
     return this
   }
 
-  public refine(check: (arg: z.core.output<this>) => unknown | Promise<unknown>, params?: string | z.core.$ZodCustomParams) {
+  public refine(check: (arg: output<this>) => unknown | Promise<unknown>, params?: string | z.core.$ZodCustomParams) {
     this.zod.refine(check, params)
     return this
   }
 
-  public superRefine(refinement: (arg: z.core.output<this>, ctx: z.core.$RefinementCtx<z.core.output<this>>) => void | Promise<void>) {
+  public superRefine(refinement: (arg: output<this>, ctx: z.core.$RefinementCtx<output<this>>) => void | Promise<void>) {
     this.zod.superRefine(refinement)
     return this
   }

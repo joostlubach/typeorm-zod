@@ -29,8 +29,14 @@ export class Column<T extends z.ZodType<any>> {
     if (this.isGenerated) { return true }
     return this.zod instanceof z.ZodReadonly
   }
-  public get isGenerated() { return false }
-  public get fieldType() { return FieldType.Column }
+  
+  public get isGenerated() {
+    return this.fieldType === FieldType.Generated
+  }
+  
+  public get fieldType() {
+    return FieldType.Column
+  }
 
   // #region Zod passthroughs
   
@@ -47,6 +53,21 @@ export class Column<T extends z.ZodType<any>> {
   public default(value: z.output<T>) {
     const withDefault = this.zod.default(value)
     return new DefaultColumn(withDefault, this.options)
+  }
+
+  public check(...checks: Array<z.core.CheckFn<z.core.output<T>> | z.core.$ZodCheck<z.core.output<T>>>) {
+    this.zod.check(...checks)
+    return this
+  }
+
+  public refine(check: (arg: z.core.output<T>) => unknown | Promise<unknown>, params?: string | z.core.$ZodCustomParams) {
+    this.zod.refine(check, params)
+    return this
+  }
+
+  public superRefine(refinement: (arg: z.core.output<T>, ctx: z.core.$RefinementCtx<z.core.output<T>>) => void | Promise<void>) {
+    this.zod.superRefine(refinement)
+    return this
   }
 
   // #endregion
@@ -84,7 +105,6 @@ export class Column<T extends z.ZodType<any>> {
     this.options.default = expression
     return this
   }
-
 
   public db_transform<Raw>(transformer: ColumnTransformer<z.output<T>, Raw>) {
     this.options.transformer = {

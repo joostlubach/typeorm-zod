@@ -17,6 +17,10 @@ export function uint8(options: ColumnOptions = {}): UInt32Column {
   return new NumberColumn(z.uint32(), {...options, type: 'int8'})
 }
 
+export function float(options: ColumnOptions = {}): Float32Column {
+  return new NumberColumn(z.float32(), {...options, type: 'float4'})
+}
+
 export function float4(options: ColumnOptions = {}): Float32Column {
   return new NumberColumn(z.float32(), {...options, type: 'float4'})
 }

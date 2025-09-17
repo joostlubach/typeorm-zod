@@ -6,19 +6,30 @@ import {
 import { z } from 'zod'
 
 import { Column } from '../column'
+import { FieldType } from '../types'
+
+export function primary(type: 'uuid' | 'string'): PrimaryColumn<z.ZodString>
+export function primary(type?: 'int' | 'number'): PrimaryColumn<z.ZodNumber>
+export function primary(
+  type: 'uuid' | 'int' | 'string' | 'number' = 'int',
+  options: PrimaryColumnOptions = {}
+): PrimaryColumn<any> {
+  const zod = type === 'uuid' || type === 'string'
+    ? z.string()
+    : z.int()
+
+  return new PrimaryColumn(zod, type, options)
+}
 
 export class PrimaryColumn<T extends z.ZodType<any>> extends Column<T> {
 
   constructor(
-    base: T,
-    private readonly type: 'uuid' | 'int' | 'string' | 'number' = 'int',
+    zod: T,
+    private readonly type: 'uuid' | 'int' | 'string' | 'number',
     public readonly options: PrimaryColumnOptions = {}
   ) {
-    super(base, {})
+    super(zod, {})
   }
-
-  private _isGenerated: boolean = false
-  public get isGenerated() { return this._isGenerated }
 
   public generated(strategy: 'increment', options?: PrimaryGeneratedColumnNumericOptions): this
   public generated(strategy: 'uuid', options?: PrimaryGeneratedColumnUUIDOptions): this
@@ -29,12 +40,19 @@ export class PrimaryColumn<T extends z.ZodType<any>> extends Column<T> {
     const strategy = typeof args[0] === 'string' ? args.shift() : true
     const options = args[0] as PrimaryGeneratedColumnOptions | undefined
 
-    this._isGenerated = true
     this.buildFieldDecorator = this.getGeneratedFieldDecorator(strategy, options)
     return this
   }
 
   public buildFieldDecorator = this.buildFieldDecorator_default
+
+  public get fieldType() {
+    if (this.buildFieldDecorator === this.buildFieldDecorator_default) {
+      return FieldType.Column
+    } else {
+      return FieldType.Generated
+    }
+  }
 
   private buildFieldDecorator_default() {
     return typeorm_PrimaryColumn(this.type, this.options)
