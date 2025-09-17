@@ -1,10 +1,9 @@
 import { AnyConstructor, superConstructor } from 'ytil'
 import { z } from 'zod'
 
-import { FieldType, getMetadata } from './registry'
-import { mergeSchemas, Schema, schema } from './schema'
+import { Schema, schema } from './schema'
 import { symbols } from './symbols'
-import { modifySchema } from './util'
+import { ColumnShape, Derivations, FieldType } from './types'
 
 /**
  * Builds a schema for inserting an entity from an entity schema.
@@ -13,15 +12,14 @@ import { modifySchema } from './util'
  * - Relations are omitted.
  */
 export function insertSchema(schema: Schema<any, any>): z.ZodObject {
-  return modifySchema(schema, (type, key) => {
-    if (type instanceof z.ZodReadonly) { return null }
-    if (columnOptions(type).generated != null) { return null }
+  return schema.resolve((column, key) => {
+    if (column.isReadOnly) { return null }
     if (key in schema.derivations) { return null }
 
-    switch (fieldType(type)) {
+    switch (column.fieldType) {
     case FieldType.Relation: return null
-    case FieldType.Generated: return type.optional()
-    case FieldType.Column: return type
+    case FieldType.Generated: return column.zod.optional()
+    case FieldType.Column: return column.zod
     }
   })
 }
@@ -35,20 +33,19 @@ export function insertSchema(schema: Schema<any, any>): z.ZodObject {
  *   the full entity is validated, not only the updates.
  */
 export function updateSchema(schema: Schema<any, any>): z.ZodObject {
-  return modifySchema(schema, (type, key) => {
-    if (type instanceof z.ZodReadonly) { return null }
-    if (columnOptions(type).generated != null) { return null }
+  return schema.resolve((column, key) => {
+    if (column.isReadOnly) { return null }
     if (key in schema.derivations) { return null }
-
-    switch (fieldType(type)) {
+    
+    switch (column.fieldType) {
     case FieldType.Relation: return null
     case FieldType.Generated: return null
-    case FieldType.Column: return type
+    case FieldType.Column: return column.zod
     }
   })
 }
 
-export function collectSchema(target: AnyConstructor): Schema<any, any> {
+export function collectSchema(target: AnyConstructor): Schema<ColumnShape, Derivations<ColumnShape>> {
   const superCtor = superConstructor(target)
   const parentSchema = superCtor == null ? undefined : collectSchema(superCtor)
   const ownSchema = (target as any)[symbols.schema] as Schema<any, any> | undefined
@@ -58,18 +55,8 @@ export function collectSchema(target: AnyConstructor): Schema<any, any> {
   } else if (parentSchema != null && ownSchema == null) {
     return parentSchema
   } else if (parentSchema != null && ownSchema != null) {
-    return mergeSchemas(parentSchema, ownSchema)
+    return parentSchema.merge(ownSchema)
   } else {
     return schema({})
   }
-}
-
-export function fieldType(type: z.ZodType): FieldType {
-  const meta = getMetadata(type)
-  return meta?.fieldType ?? FieldType.Column
-}
-
-export function columnOptions(type: z.ZodType): Record<string, any> {
-  const meta = getMetadata(type)
-  return meta?.options ?? {}
 }

@@ -1,16 +1,16 @@
 import { BeforeInsert, BeforeUpdate, Entity as typeorm_Entity, EntityOptions } from 'typeorm'
-import { z } from 'zod'
 
 import config from '../config'
+import { Schema } from '../schema'
 import { symbols } from '../symbols'
 import { validateInsert, validateUpdate } from '../validate'
 import { EntitySchema } from './EntitySchema'
 
-export function Entity(name: string, schema: z.ZodObject, options?: EntityOptions): ClassDecorator
-export function Entity(schema: z.ZodObject, options?: EntityOptions): ClassDecorator
+export function Entity(name: string, schema: Schema<any, any>, options?: EntityOptions): ClassDecorator
+export function Entity(schema: Schema<any, any>, options?: EntityOptions): ClassDecorator
 export function Entity(...args: any[]): ClassDecorator {
   const name = typeof args[0] === 'string' ? args.shift() : undefined
-  const schema = args.shift() as z.ZodObject
+  const schema = args.shift() as Schema<any, any>
   const options = {
     collation: config.collation.default,
     ...args.shift() as EntityOptions,
@@ -34,11 +34,15 @@ export function Entity(...args: any[]): ClassDecorator {
     }
 
     Object.defineProperty(target.prototype, symbols.validateInsert, {
-      value: async function () { await validateInsert(this) },
+      value: async function () {
+        await validateInsert(this) 
+      },
     })
 
     Object.defineProperty(target.prototype, symbols.validateUpdate, {
-      value: async function () { await validateUpdate(this) },
+      value: async function () {
+        await validateUpdate(this) 
+      },
     })
   }
 }

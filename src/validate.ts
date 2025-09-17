@@ -1,23 +1,13 @@
 import { AnyConstructor, objectEntries } from 'ytil'
-import { z } from 'zod'
 
 import { ZodValidationError } from './ZodValidationError'
-import { getMetadata } from './registry'
+import { ForeignKeyColumn } from './columns'
+import { Schema } from './schema'
 import { collectSchema, insertSchema, updateSchema } from './schemas'
-import { foreignKeyDecorator, ForeignKeyOptions } from './types/manyToOne'
-
-export function applyDefaults(entity: object) {
-  const schema = collectSchema(entity.constructor as AnyConstructor)
-
-  for (const [key, type] of Object.entries(schema.shape)) {
-    if (type instanceof z.ZodDefault) {
-      Object.assign(entity, {[key]: type.def.defaultValue})
-    }
-  }
-}
 
 export async function validateInsert(entity: object) {
   const schema = collectSchema(entity.constructor as AnyConstructor)
+  applyDerivations(entity, schema)
   assignForeignKeys(entity, schema)
 
   const result = await insertSchema(schema).safeParseAsync(entity, {
@@ -32,6 +22,7 @@ export async function validateInsert(entity: object) {
 
 export async function validateUpdate(entity: object) {
   const schema = collectSchema(entity.constructor as AnyConstructor)
+  applyDerivations(entity, schema)
   assignForeignKeys(entity, schema)
 
   const result = await updateSchema(schema).safeParseAsync(entity, {
@@ -44,15 +35,22 @@ export async function validateUpdate(entity: object) {
   }
 }
 
-function assignForeignKeys(entity: object, schema: z.ZodObject) {
-  // Find any foreign key columns, check if there is an associated relationship value and take its ID.
-  for (const [key, type] of objectEntries(schema.shape)) {
-    const meta = getMetadata(type)
-    if (meta.decoratorFactory !== foreignKeyDecorator) { continue }
-    if ((entity as any)[key] != null) { continue }
+function applyDerivations(entity: object, schema: Schema<any, any>) {
+  for (const [key, derivation] of objectEntries(schema.derivations)) {
+    if (derivation != null) {
+      Object.assign(entity, {
+        [key]: derivation(entity as any)
+      })
+    }
+  }
+}
 
-    const options = meta.options as ForeignKeyOptions
-    const relation = (entity as any)[options.relationName]
+function assignForeignKeys(entity: object, schema: Schema<any, any>) {
+  // Find any foreign key columns, check if there is an associated relationship value and take its ID.
+  for (const [key, column] of objectEntries(schema.columns)) {
+    if (!(column instanceof ForeignKeyColumn)) { continue }
+
+    const relation = (entity as any)[column.relationName]
     if (relation != null && 'id' in relation) {
       Object.assign(entity, {[key]: relation.id})
     }

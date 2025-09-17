@@ -1,101 +1,97 @@
 import { IndexOptions, TableUniqueOptions } from 'typeorm'
-import { EmptyObject } from 'ytil'
+import { EmptyObject, objectEntries } from 'ytil'
 import { z } from 'zod'
 
+import { Column, deferTo } from './column'
 import { symbols } from './symbols'
-import { Derivations, Shape } from './typings'
+import { ColumnShape, Derivations, output } from './types'
 
-export function schema<S extends Shape>(shape: S): Schema<S, EmptyObject>
-export function schema<S extends Shape, D extends Derivations<S>>(shape: S, derivations: D): Schema<S, D>
-export function schema(shape: Shape, derivations: Derivations<any> = {}) {
-  const schema = z.object(shape)
-  augmentSchema(schema, shape, derivations)
-  return schema
+export function schema<S extends ColumnShape>(shape: S): Schema<S, EmptyObject>
+export function schema<S extends ColumnShape, D extends Derivations<S>>(shape: S, derivations: D): Schema<S, D>
+export function schema(columns: ColumnShape, derivations: Derivations<any> = {}) {
+  return new Schema(columns, derivations)
 }
 
-function augmentSchema<S extends Shape, D extends Derivations<S>>(input: z.ZodObject, shape: S, derivations: D): asserts input is Schema<S, D> {
-  Object.assign(schema, {
-    shape,
-    derivations,
-    indexes: [],
-    uniques: [],
+export class Schema<S extends ColumnShape, D extends Derivations<S> = {}> {
 
-    derive,
-    index,
-    unique
-  })
-}
+  constructor(
+    public readonly columns: S,
+    public readonly derivations: D,
+  ) {}
 
-function derive<S extends Schema<any, any>>(this: S, derivations: Derivations<S>) {
-  return {
-    ...this,
-    derivations: {
-      ...this.derivations,
-      ...derivations
+  private readonly base = z.object({})
+
+  private readonly indexes: Array<[string, IndexOptions | {synchronize: false}]> = []
+  private readonly uniques: Array<[string, string[], Omit<TableUniqueOptions, 'name' | 'columnNames'>]> = []
+
+  public derive<S extends ColumnShape, D extends Derivations<S>, DD extends Derivations<S>>(this: Schema<S, D>, derivations: DD): Schema<S, D & DD> {
+    Object.assign(this.derivations, derivations)
+    return this as Schema<S, D & DD>
+  }
+
+  public index<S extends ColumnShape>(this: Schema<S>, name: string, options: IndexOptions | {synchronize: false} = {}) {
+    this.indexes.push([name, options])
+    return this
+  }
+
+  public unique<S extends ColumnShape>(this: Schema<S>, name: string, columnNames: string[], options: Omit<TableUniqueOptions, 'name' | 'columnNames'> = {}) {
+    this.uniques.push([name, columnNames, options])
+  }
+
+  public readonly check = deferTo(() => this.base, 'check')
+  public readonly refine = deferTo(() => this.base, 'refine')
+  public readonly superRefine = deferTo(() => this.base, 'superRefine')
+
+  public resolve(buildType: (column: Column<any>, key: keyof columnsOf<this>) => z.ZodType | null): z.ZodObject {
+    const shape: Record<any, z.ZodType> = {}
+
+    for (const [key, column] of objectEntries(this.columns)) {
+      const type = buildType(column, key)
+      if (type == null) { continue }
+
+      shape[key] = type
     }
-  }
-}
+    
+    // Build a new schema.
+    const next = z.object(shape)
 
-function index<S extends Shape>(this: Schema<S>, name: string, options: IndexOptions | {synchronize: false} = {}) {
-  return {
-    ...this,
-    indexes: [
-      ...this.indexes,
-      [name, options]
-    ]
-  }
-}
-
-function unique<S extends Shape>(this: Schema<S>, name: string, columnNames: string[], options: Omit<TableUniqueOptions, 'name' | 'columnNames'> = {}) {
-  return {
-    ...this,
-    uniques: [
-      ...this.uniques,
-      [name, columnNames, options]
-    ]
-  }
-}
-
-export function mergeSchemas<S1 extends Schema<any, any>, S2 extends Schema<any, any>>(left: S1, right: S2): mergeSchemas<S1, S2> {
-  const shape: Shape = {
-    ...left.shape,
-    ...right.shape,
-  }
-  const derivations = {
-    ...left.derivations,
-    ...right.derivations,
+    // Apply all additional checks from the original schema.
+    for (const check of this.base.def.checks ?? []) {
+      next.check(check as z.core.$ZodCheck<any>)
+    }
+    return next
   }
 
-  // Build a new schema.
-  let next = schema(shape, derivations)
+  public merge(other: Schema<any, any>) {
+    const columns: ColumnShape = {
+      ...this.columns,
+      ...other.columns,
+    }
+    const derivations = {
+      ...this.derivations,
+      ...other.derivations,
+    }
 
-  // Apply all additional checks from both schemas.
-  for (const check of [...(left.def.checks ?? []), ...(right.def.checks ?? [])]) {
-    next = next.check(check as z.core.$ZodCheck<any>)
+    // Build a new schema.
+    const next = schema(columns, derivations)
+
+    // Apply all additional checks from both schemas.
+    for (const check of [...(this.base.def.checks ?? []), ...(other.base.def.checks ?? [])]) {
+      next.check(check as z.core.$ZodCheck<any>)
+    }
+    
+    return next
   }
-  
-  return next
-}
 
-export interface Schema<S extends Shape, D extends Derivations<S> = {}> extends z.ZodObject<S> {
-  readonly shape: S
-  readonly derivations: D
-  readonly indexes: ReadonlyArray<[string, IndexOptions | {synchronize: false}]>
-  readonly uniques: ReadonlyArray<[string, string[], TableUniqueOptions]>
-
-  derive<ExtraDerivations extends Derivations<S>>(derivations: ExtraDerivations): Schema<S, D & ExtraDerivations>
-  
-  index(name: string, options?: IndexOptions | {synchronize: false}): this
-  unique(name: string, columnNames: string[], options?: Omit<TableUniqueOptions, 'name' | 'columnNames'>): this
 }
 
 export type EmptySchema = Schema<Record<string, never>, Record<string, never>>
 
-export type shapeOf<S extends Schema<any, any>> = S['shape']
+export type columnsOf<S extends Schema<any, any>> = S['columns']
 export type derivationsOf<S extends Schema<any, any>> = S['derivations']
 
 export type mergeSchemas<S1 extends Schema<any, any>, S2 extends Schema<any, any>> = Schema<
-  shapeOf<S1> & shapeOf<S2>,
+  columnsOf<S1> & columnsOf<S2>,
   derivationsOf<S1> & derivationsOf<S2>
 >
 
@@ -127,14 +123,14 @@ export type inputOf<T> = schemaOf<T> extends never
  * Utility type to mark all derived properties from the schema as readonly.
  */
 type markDerivedAsReadonly<S extends Schema<any, any> | never> = S extends never ? never : {
-  [K in keyof shapeOf<S> as (K extends keyof derivationsOf<S> ? never : K)]: z.infer<shapeOf<S>[K]>
+  [K in keyof columnsOf<S> as (K extends keyof derivationsOf<S> ? never : K)]: output<columnsOf<S>[K]>
 } & {
-  readonly [K in keyof shapeOf<S> as (K extends keyof derivationsOf<S> ? K : never)]: z.infer<shapeOf<S>[K]>
+  readonly [K in keyof columnsOf<S> as (K extends keyof derivationsOf<S> ? K : never)]: output<columnsOf<S>[K]>
 }
 
 /**
  * Utility type to omit all derived properties from the schema.
  */
 type omitDerived<S extends Schema<any, any> | never> = S extends never ? never : {
-  [K in keyof shapeOf<S> as (K extends keyof derivationsOf<S> ? never : K)]: z.infer<shapeOf<S>[K]>
+  [K in keyof columnsOf<S> as (K extends keyof derivationsOf<S> ? never : K)]: output<columnsOf<S>[K]>
 }
