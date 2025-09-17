@@ -19,7 +19,7 @@ export class Schema<S extends ColumnShape, D extends Derivations<S> = {}> {
     public readonly derivations: D,
   ) {}
 
-  private readonly zod = z.object({})
+  private readonly zod = z.object({}) as z.ZodObject<output<S>>
 
   private readonly indexes: Array<[string, IndexOptions | {synchronize: false}]> = []
   private readonly uniques: Array<[string, string[], Omit<TableUniqueOptions, 'name' | 'columnNames'>]> = []
@@ -29,26 +29,27 @@ export class Schema<S extends ColumnShape, D extends Derivations<S> = {}> {
     return this as Schema<S, D & DD>
   }
 
-  public index<S extends ColumnShape>(this: Schema<S>, name: string, options: IndexOptions | {synchronize: false} = {}) {
+  public index(name: string, options: IndexOptions | {synchronize: false} = {}): this {
     this.indexes.push([name, options])
     return this
   }
 
-  public unique<S extends ColumnShape>(this: Schema<S>, name: string, columnNames: string[], options: Omit<TableUniqueOptions, 'name' | 'columnNames'> = {}) {
+  public unique(name: string, columnNames: string[], options: Omit<TableUniqueOptions, 'name' | 'columnNames'> = {}): this {
     this.uniques.push([name, columnNames, options])
+    return this
   }
 
-  public check(...checks: Array<z.core.CheckFn<output<this>> | z.core.$ZodCheck<output<this>>>) {
+  public check(...checks: Array<z.core.CheckFn<z.output<typeof this.zod>> | z.core.$ZodCheck<z.output<typeof this.zod>>>): this {
     this.zod.check(...checks)
     return this
   }
 
-  public refine(check: (arg: output<this>) => unknown | Promise<unknown>, params?: string | z.core.$ZodCustomParams) {
+  public refine(check: (arg: z.output<typeof this.zod>) => unknown | Promise<unknown>, params?: string | z.core.$ZodCustomParams) {
     this.zod.refine(check, params)
     return this
   }
 
-  public superRefine(refinement: (arg: output<this>, ctx: z.core.$RefinementCtx<output<this>>) => void | Promise<void>) {
+  public superRefine(refinement: (arg: z.output<typeof this.zod>, ctx: z.core.$RefinementCtx<z.output<typeof this.zod>>) => void | Promise<void>) {
     this.zod.superRefine(refinement)
     return this
   }
@@ -119,7 +120,7 @@ export type schemaOf<T> =
  * are marked as readonly here.
  */
 export type attributesOf<T> = schemaOf<T> extends never
-  ? T
+  ? {[K in keyof T]: T[K]}
   : markDerivedAsReadonly<schemaOf<T>>
 
 /**
