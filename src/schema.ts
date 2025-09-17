@@ -2,7 +2,7 @@ import { IndexOptions, TableUniqueOptions } from 'typeorm'
 import { EmptyObject, objectEntries } from 'ytil'
 import { z } from 'zod'
 
-import { Column, deferTo } from './column'
+import { Column } from './column'
 import { symbols } from './symbols'
 import { ColumnShape, Derivations, output } from './types'
 
@@ -19,7 +19,7 @@ export class Schema<S extends ColumnShape, D extends Derivations<S> = {}> {
     public readonly derivations: D,
   ) {}
 
-  private readonly base = z.object({})
+  private readonly zod = z.object({})
 
   private readonly indexes: Array<[string, IndexOptions | {synchronize: false}]> = []
   private readonly uniques: Array<[string, string[], Omit<TableUniqueOptions, 'name' | 'columnNames'>]> = []
@@ -38,9 +38,20 @@ export class Schema<S extends ColumnShape, D extends Derivations<S> = {}> {
     this.uniques.push([name, columnNames, options])
   }
 
-  public readonly check = deferTo(() => this.base, 'check')
-  public readonly refine = deferTo(() => this.base, 'refine')
-  public readonly superRefine = deferTo(() => this.base, 'superRefine')
+  public check(...checks: Array<z.core.CheckFn<z.core.output<this>> | z.core.$ZodCheck<z.core.output<this>>>) {
+    this.zod.check(...checks)
+    return this
+  }
+
+  public refine(check: (arg: z.core.output<this>) => unknown | Promise<unknown>, params?: string | z.core.$ZodCustomParams) {
+    this.zod.refine(check, params)
+    return this
+  }
+
+  public superRefine(refinement: (arg: z.core.output<this>, ctx: z.core.$RefinementCtx<z.core.output<this>>) => void | Promise<void>) {
+    this.zod.superRefine(refinement)
+    return this
+  }
 
   public resolve(buildType: (column: Column<any>, key: keyof columnsOf<this>) => z.ZodType | null): z.ZodObject {
     const shape: Record<any, z.ZodType> = {}
@@ -56,7 +67,7 @@ export class Schema<S extends ColumnShape, D extends Derivations<S> = {}> {
     const next = z.object(shape)
 
     // Apply all additional checks from the original schema.
-    for (const check of this.base.def.checks ?? []) {
+    for (const check of this.zod.def.checks ?? []) {
       next.check(check as z.core.$ZodCheck<any>)
     }
     return next
@@ -76,7 +87,7 @@ export class Schema<S extends ColumnShape, D extends Derivations<S> = {}> {
     const next = schema(columns, derivations)
 
     // Apply all additional checks from both schemas.
-    for (const check of [...(this.base.def.checks ?? []), ...(other.base.def.checks ?? [])]) {
+    for (const check of [...(this.zod.def.checks ?? []), ...(other.zod.def.checks ?? [])]) {
       next.check(check as z.core.$ZodCheck<any>)
     }
     

@@ -7,7 +7,7 @@ import {
   ObjectType,
   Unique,
 } from 'typeorm'
-import { AnyFunction, wrapArray } from 'ytil'
+import { AnyFunction, MethodsOf, wrapArray } from 'ytil'
 import { z } from 'zod'
 
 import { FieldType } from './types'
@@ -162,9 +162,24 @@ export class DefaultColumn<T extends z.ZodDefault<any>> extends Column<T> {
 export type ColumnType = Exclude<typeorm_ColumnType, StringConstructor | NumberConstructor | BooleanConstructor | ObjectConstructor | BufferConstructor | DateConstructor>
 export type ColumnOptions = typeorm_ColumnOptions
 
-export function deferTo<T extends object, K extends keyof T>(target: () => T, key: K): T[K] {
-  return ((...args: any[]) => (target()[key] as AnyFunction)(...args)) as T[K]
+export function modifier<C extends Column<any>, K extends keyof MethodsOf<zodOf<C>>>(
+  target: () => zodOf<C>,
+  key: K
+): ColumnModifier<zodOf<C>[K]> {
+  return function (this: Column<any>, ...args: any[]) {
+    const tgt = target()
+    const method = tgt[key] as AnyFunction
+    const retval = method.call(tgt, ...args)
+    if (retval !== this) {
+      throw new Error("Modifier returns different instance")
+    }
+
+    return this
+  }
 }
+
+type ColumnModifier<F extends (...args: any[]) => z.ZodType<any>> = (...args: Parameters<F>) => Column<ReturnType<F>>
+type zodOf<C extends Column<any>> = C extends Column<infer T> ? T : never
 
 export interface UniqueOptions {
   scope?: string | string[]

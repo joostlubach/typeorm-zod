@@ -1,7 +1,7 @@
 import { ColumnOptions } from 'typeorm'
 import { z } from 'zod'
 
-import { Column, deferTo } from '../column'
+import { Column, modifier } from '../column'
 
 // #region Number
 
@@ -34,21 +34,21 @@ export class NumberColumn<T extends z.ZodNumber> extends Column<T> {
     super(base, options)
   }
 
-  public readonly gt = deferTo(() => this.zod, 'gt')
-  public readonly gte = deferTo(() => this.zod, 'gte')
-  public readonly min = deferTo(() => this.zod, 'min')
-  public readonly lt = deferTo(() => this.zod, 'lt')
-  public readonly lte = deferTo(() => this.zod, 'lte')
-  public readonly max = deferTo(() => this.zod, 'max')
-  public readonly int = deferTo(() => this.zod, 'int')
-  public readonly safe = deferTo(() => this.zod, 'safe')
-  public readonly positive = deferTo(() => this.zod, 'positive')
-  public readonly nonnegative = deferTo(() => this.zod, 'nonnegative')
-  public readonly negative = deferTo(() => this.zod, 'negative')
-  public readonly nonpositive = deferTo(() => this.zod, 'nonpositive')
-  public readonly multipleOf = deferTo(() => this.zod, 'multipleOf')
-  public readonly step = deferTo(() => this.zod, 'step')
-  public readonly finite = deferTo(() => this.zod, 'finite')
+  public readonly gt = modifier(() => this.zod, 'gt')
+  public readonly gte = modifier(() => this.zod, 'gte')
+  public readonly min = modifier(() => this.zod, 'min')
+  public readonly lt = modifier(() => this.zod, 'lt')
+  public readonly lte = modifier(() => this.zod, 'lte')
+  public readonly max = modifier(() => this.zod, 'max')
+  public readonly int = modifier(() => this.zod, 'int')
+  public readonly safe = modifier(() => this.zod, 'safe')
+  public readonly positive = modifier(() => this.zod, 'positive')
+  public readonly nonnegative = modifier(() => this.zod, 'nonnegative')
+  public readonly negative = modifier(() => this.zod, 'negative')
+  public readonly nonpositive = modifier(() => this.zod, 'nonpositive')
+  public readonly multipleOf = modifier(() => this.zod, 'multipleOf')
+  public readonly step = modifier(() => this.zod, 'step')
+  public readonly finite = modifier(() => this.zod, 'finite')
 
   public precision(precision: number) {
     this.options.precision = precision
@@ -85,12 +85,12 @@ export class BigIntColumn extends Column<z.ZodBigInt> {
     super(z.bigint(), options)
   }
 
-  public readonly gt: typeof z.ZodBigInt.prototype.gt = deferTo(() => this.zod, 'gt')
-  public readonly gte: typeof z.ZodBigInt.prototype.gte = deferTo(() => this.zod, 'gte')
-  public readonly min: typeof z.ZodBigInt.prototype.min = deferTo(() => this.zod, 'min')
-  public readonly lt: typeof z.ZodBigInt.prototype.lt = deferTo(() => this.zod, 'lt')
-  public readonly lte: typeof z.ZodBigInt.prototype.lte = deferTo(() => this.zod, 'lte')
-  public readonly max: typeof z.ZodBigInt.prototype.max = deferTo(() => this.zod, 'max')
+  public readonly gt = modifier(() => this.zod, 'gt')
+  public readonly gte = modifier(() => this.zod, 'gte')
+  public readonly min = modifier(() => this.zod, 'min')
+  public readonly lt = modifier(() => this.zod, 'lt')
+  public readonly lte = modifier(() => this.zod, 'lte')
+  public readonly max = modifier(() => this.zod, 'max')
 
 }
 
