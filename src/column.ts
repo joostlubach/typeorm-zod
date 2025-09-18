@@ -119,7 +119,7 @@ export class Column<T extends z.ZodType<any>> {
 
   // #region Additional modifiers
 
-  public db_transform<Raw>(transformer: ColumnTransformer<z.output<T>, Raw>) {
+  public transform<Raw>(transformer: ColumnTransformer<z.output<T>, Raw>) {
     this.options.transformer = {
       from: raw => raw == null ? null : transformer.from(raw),
       to:   value => value == null ? null : transformer.to(value),
