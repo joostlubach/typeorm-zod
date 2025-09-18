@@ -30,7 +30,7 @@ export class ManyToManyColumn<E extends object> extends Column<z.ZodType<E[]>> {
   constructor(
     public readonly entity: string | ((type?: any) => ObjectType<any>),
     public readonly inverseSide: string | ((object: any) => any),
-    public readonly options: RelationOptions = {}
+    public readonly options: RelationOptions = {},
   ) {
     super(z.array(z.object() as z.ZodType<E>), {})
   }
@@ -76,17 +76,17 @@ export class ManyToManyColumn<E extends object> extends Column<z.ZodType<E[]>> {
 
       const joinTableName = this_joinTableName ?? [
         pluralize(thisSideTableName),
-        pluralize(otherSideTableName)
+        pluralize(otherSideTableName),
       ].join('_')
       
       const joinColumn = this_joinColumn ?? {
-        name: `${thisSidePrefix}_id`,
-        referencedColumnName: 'id'
+        name:                 `${thisSidePrefix}_id`,
+        referencedColumnName: 'id',
       }
 
       const inverseJoinColumn = this_inverseJoinColumn ?? {
-        name: `${otherSidePrefix}_id`,
-        referencedColumnName: 'id'
+        name:                 `${otherSidePrefix}_id`,
+        referencedColumnName: 'id',
       }
 
       ManyToMany(entity, inverseSide, options)(target, property)
