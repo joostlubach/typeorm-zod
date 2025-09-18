@@ -10,11 +10,11 @@ export function date(options?: ColumnType | ColumnOptions) {
 export class DateColumn extends Column<z.ZodDate> {
 
   constructor(
-    options?: ColumnOptions
+    options?: ColumnOptions,
   ) {
     super(z.date(), {
       type: config.typemap.date,
-      ...options
+      ...options,
     })
   }
 

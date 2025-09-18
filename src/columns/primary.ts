@@ -12,7 +12,7 @@ export function primary(type: 'uuid' | 'string'): PrimaryColumn<z.ZodString>
 export function primary(type?: 'int' | 'number'): PrimaryColumn<z.ZodNumber>
 export function primary(
   type: 'uuid' | 'int' | 'string' | 'number' = 'int',
-  options: PrimaryColumnOptions = {}
+  options: PrimaryColumnOptions = {},
 ): PrimaryColumn<any> {
   const zod = type === 'uuid' || type === 'string'
     ? z.string()
@@ -26,7 +26,7 @@ export class PrimaryColumn<T extends z.ZodType<any>> extends Column<T> {
   constructor(
     zod: T,
     private readonly type: 'uuid' | 'int' | 'string' | 'number',
-    public readonly options: PrimaryColumnOptions = {}
+    public readonly options: PrimaryColumnOptions = {},
   ) {
     super(zod, {})
   }

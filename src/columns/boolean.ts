@@ -8,10 +8,12 @@ export function boolean(options?: ColumnOptions): Column<z.ZodBoolean> {
 }
 
 export class BooleanColumn extends Column<z.ZodBoolean> {
+
   constructor(options?: ColumnOptions) {
     super(z.boolean(), {
       type: config.typemap.boolean,
-      ...options
+      ...options,
     })
   }
+
 }

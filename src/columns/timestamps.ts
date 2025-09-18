@@ -11,11 +11,11 @@ export function create_timestamp(options: ColumnOptions = {}) {
 export class CreateTimestampColumn extends Column<z.ZodDate> {
 
   constructor(
-    options?: ColumnOptions
+    options?: ColumnOptions,
   ) {
     super(z.date(), {
       ...options,
-      type: config.typemap.timestamp
+      type: config.typemap.timestamp,
     })
   }
 
@@ -32,11 +32,11 @@ export function update_timestamp(options: ColumnOptions = {}) {
 export class UpdateTimestampColumn extends Column<z.ZodDate> {
 
   constructor(
-    options?: ColumnOptions
+    options?: ColumnOptions,
   ) {
     super(z.date(), {
       ...options,
-      type: config.typemap.timestamp
+      type: config.typemap.timestamp,
     })
   }
 

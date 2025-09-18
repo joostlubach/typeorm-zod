@@ -59,7 +59,7 @@ function applyDerivations(entity: object, schema: Schema<any, any>) {
   for (const [key, derivation] of objectEntries(schema.derivations)) {
     if (derivation != null) {
       Object.assign(entity, {
-        [key]: derivation(entity as any)
+        [key]: derivation(entity as any),
       })
     }
   }

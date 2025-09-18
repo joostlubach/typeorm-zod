@@ -54,9 +54,9 @@ export interface Typemap {
 }
 
 const config: Config = {
-  foreignKeyNaming: ForeignKeyNaming.SNAKE,
+  foreignKeyNaming:           ForeignKeyNaming.SNAKE,
   foreignKeyConstraintNaming: ForeignKeyConstraintNaming.SNAKE,
-  indexNaming:      null,
+  indexNaming:                null,
 
   typemap: typemaps.postgres,
 

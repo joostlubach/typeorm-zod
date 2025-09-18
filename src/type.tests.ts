@@ -8,25 +8,29 @@ import { attributesOf, columnsOf, derivationsOf, inputOf, schema, schemaOf } fro
 // #region Type assertions
 
 const base = schema({
-  id: int32()
+  id: int32(),
 })
 
 const user = schema({
-  email: string(z.email()),
-  active: boolean()
+  email:  string(z.email()),
+  active: boolean(),
 }).derive({
-  active: (obj) => obj.email != null
+  active: (obj) => obj.email != null,
 })
 
 class Base extends mixin(base) {}
 class NonTZBase {
+
   id!: number
+
 }
 
 class User1 extends mixin(user, Base) {}
 class User2 extends mixin(user, NonTZBase) {}
 class User3 {
+
   email!: string 
+
 }
 
 // Check 1 - schemaOf<Class> <==> schemaOf<type Class>
@@ -62,6 +66,9 @@ const _sb3: User2Schema2 = {} as User2Schema1
 const _sb4: User3Schema2 = {} as User3Schema1
 
 // Check 2 - Inputs
+
+const x = z.object({email: z.string()})
+type T = z.input<typeof x>
 
 type User1Input = inputOf<User1> // {id: number, email: string}
 type User2Input = inputOf<User2> // {email: string}
@@ -140,58 +147,58 @@ const t4 = t3.index()
 const s1_ok1 = schema({
   foo: string(),
 }).derive({
-  foo: () => 'test'
+  foo: () => 'test',
 })
 
 const s1_ok2 = schema({
   foo: string().optional(),
 }).derive({
-  foo: () => undefined
+  foo: () => undefined,
 })
 
 const s1_ok3 = schema({
   foo: string().optional(),
 }).derive({
-  foo: () => null
+  foo: () => undefined,
 })
 
 const s1_ok4 = schema({
   foo: string().optional(),
 }).derive({
-  foo: () => 'test'
+  foo: () => 'test',
 })
 
 const s1_ok5 = schema({
   foo: string().nullable(),
 }).derive({
-  foo: () => null
+  foo: () => null,
 })
 
 const s1_ok6 = schema({
   foo: string().nullable(),
 }).derive({
-  foo: () => 'test'
+  foo: () => 'test',
 })
 
 const s1_err1 = schema({
   foo: string(),
 }).derive({
   // @ts-expect-error
-  foo: () => null
+  foo: () => null,
 })
 
 const s1_err2 = schema({
   foo: string(),
 }).derive({
   // @ts-expect-error
-  foo: () => 1
+  foo: () => 1,
 })
 
 const s1_err3 = schema({
   foo: string().optional(),
 }).derive({
   // @ts-expect-error
-  foo: () => 1
+  foo: () => 1,
 })
 
 // #endregion

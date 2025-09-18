@@ -26,7 +26,7 @@ export class NumberColumn<T extends z.ZodNumber = z.ZodNumber> extends Column<T>
 
   constructor(
     base: T,
-    options: ColumnOptions
+    options: ColumnOptions,
   ) {
     super(base, options)
   }
@@ -50,7 +50,7 @@ export class NumberColumn<T extends z.ZodNumber = z.ZodNumber> extends Column<T>
   public precision(precision: number) {
     this.options.precision = precision
     return this
-}
+  }
 
   public scale(scale: number) {
     this.options.scale = scale
@@ -77,7 +77,7 @@ export function bigint(options: ColumnOptions = {}): BigIntColumn {
 export class BigIntColumn extends Column<z.ZodBigInt> {
   
   constructor(
-    options: ColumnOptions
+    options: ColumnOptions,
   ) {
     super(z.bigint(), options)
   }
