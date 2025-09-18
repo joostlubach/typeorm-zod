@@ -19,7 +19,7 @@ export class Column<T extends z.ZodType<any>> {
 
   constructor(
     zod: T,
-    typeOrOptions?: ColumnType | ColumnOptions
+    typeOrOptions?: ColumnType | ColumnOptions,
   ) {
     this._zod = zod
     this.options = typeof typeOrOptions === 'string'
@@ -59,7 +59,7 @@ export class Column<T extends z.ZodType<any>> {
     return this.transmute(NullableColumn)
   }
 
-  public default(value: z.output<T>): DefaultColumn<T, this> {
+  public default(value: z.output<T> | (() => z.util.NoUndefined<z.output<T>>)): DefaultColumn<T, this> {
     return this.transmute(DefaultColumn, value)
   }
 
@@ -141,7 +141,7 @@ export class Column<T extends z.ZodType<any>> {
       typeorm_Column(this.options)(target, prop)
 
       const tableName = getTypeORMTableName(target.constructor)
-      const indexDecorator = this.buildIndexDecorator(tableName, prop.toString()  )
+      const indexDecorator = this.buildIndexDecorator(tableName, prop.toString() )
       indexDecorator?.(target, prop)
     }
   }
@@ -159,7 +159,7 @@ export class Column<T extends z.ZodType<any>> {
 
     const [
       name = config.indexNaming?.(tableName, field, false),
-      options
+      options,
     ] = this._index
     if (name == null) {
       return Index(options)
@@ -173,7 +173,7 @@ export class Column<T extends z.ZodType<any>> {
 
     const [
       name = config.indexNaming?.(tableName, field, true),
-      options
+      options,
     ] = this._unique
     const fields = options.scope != null ? [...wrapArray(options.scope), field] : [field]
 
@@ -185,30 +185,37 @@ export class Column<T extends z.ZodType<any>> {
   }
 
   // #endregion
+
 }
 
-export class OptionalColumn<T extends z.ZodType<any>> extends Column<z.ZodNullable<z.ZodOptional<T>>> {
+export class OptionalColumn<T extends z.ZodType<any>> extends Column<z.ZodOptional<T>> {
+
   constructor(base: Column<T>) {
-    super(base.zod.optional().nullable(), {
+    super(base.zod.optional(), {
       ...base.options,
-      nullable: true
-    });
+      nullable: true,
+    })
   }
+
 }
 
 export class NullableColumn<T extends z.ZodType<any>> extends Column<z.ZodNullable<T>> {
+
   constructor(base: Column<T>) {
     super(base.zod.nullable(), {
       ...base.options,
-      nullable: true
-    });
+      nullable: true,
+    })
   }
+
 }
 
 export class DefaultColumn<T extends z.ZodType<any>, C extends Column<T>> extends Column<z.ZodDefault<T>> {
-  constructor(base: C, value: z.output<T>) {
+
+  constructor(base: C, value: z.output<T> | (() => z.util.NoUndefined<z.output<T>>)) {
     super(base.zod.default(value), base.options)
   }
+
 }
 
 export type ColumnType = Exclude<typeorm_ColumnType, StringConstructor | NumberConstructor | BooleanConstructor | ObjectConstructor | BufferConstructor | DateConstructor>
@@ -216,7 +223,7 @@ export type ColumnOptions = typeorm_ColumnOptions
 
 export function modifier<C extends Column<any>, K extends keyof C['zod']>(
   target: () => C['zod'],
-  key: K
+  key: K,
 ): ColumnModifier<C['zod'][K]> {
   return function (this: Column<any>, ...args: any[]) {
     const tgt = target()

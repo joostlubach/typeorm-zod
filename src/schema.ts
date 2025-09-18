@@ -122,28 +122,21 @@ export type schemaOf<T> =
  */
 export type attributesOf<T> = schemaOf<T> extends never
   ? {[K in keyof T]: T[K]}
-  : markDerivedAsReadonly<schemaOf<T>>
+  : output<schemaOf<T>>
 
 /**
  * Retrieves the input shape of entities created with the given schema. Derived properties are excluded
  * here.
  */
 export type inputOf<T> = schemaOf<T> extends never
-  ? T
+  ? {[K in keyof T]: T[K]}
   : omitDerived<schemaOf<T>>
 
 /**
- * Utility type to mark all derived properties from the schema as readonly.
- */
-type markDerivedAsReadonly<S extends Schema<any, any> | never> = S extends never ? never : {
-  [K in keyof columnsOf<S> as (K extends keyof derivationsOf<S> ? never : K)]: output<columnsOf<S>[K]>
-} & {
-  readonly [K in keyof columnsOf<S> as (K extends keyof derivationsOf<S> ? K : never)]: output<columnsOf<S>[K]>
-}
-
-/**
- * Utility type to omit all derived properties from the schema.
+ * Utility type to omit all derived and default properties from the schema.
  */
 type omitDerived<S extends Schema<any, any> | never> = S extends never ? never : {
-  [K in keyof columnsOf<S> as (K extends keyof derivationsOf<S> ? never : K)]: output<columnsOf<S>[K]>
+  [K in keyof columnsOf<S> as (
+    K extends keyof derivationsOf<S> ? never : K
+  )]: z.input<columnsOf<S>[K]>
 }
