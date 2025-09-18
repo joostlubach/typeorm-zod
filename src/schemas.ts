@@ -45,7 +45,9 @@ export function updateSchema(schema: Schema<any, any>): z.ZodObject {
   })
 }
 
-export function collectSchema(target: AnyConstructor): Schema<ColumnShape, Derivations<ColumnShape>> {
+export function collectSchema<S extends Schema<any, any>>(target: AnyConstructor & {[symbols.schema]: S}): S
+export function collectSchema(target: AnyConstructor): Schema<ColumnShape, Derivations<ColumnShape>>
+export function collectSchema(target: AnyConstructor) {
   const superCtor = superConstructor(target)
   const parentSchema = superCtor == null ? undefined : collectSchema(superCtor)
   const ownSchema = (target as any)[symbols.schema] as Schema<any, any> | undefined

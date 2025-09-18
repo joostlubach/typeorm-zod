@@ -97,6 +97,7 @@ export class Schema<S extends ColumnShape, D extends Derivations<S> = {}> {
 
 }
 
+export type AnySchema = Schema<ColumnShape, Derivations<ColumnShape>>
 export type EmptySchema = Schema<Record<string, never>, Record<string, never>>
 
 export type columnsOf<S extends Schema<any, any>> = S['columns']

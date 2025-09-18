@@ -1,8 +1,9 @@
 import { AnyConstructor, objectEntries } from 'ytil'
+import { z } from 'zod'
 
 import { ZodValidationError } from './ZodValidationError'
 import { ForeignKeyColumn } from './columns'
-import { Schema } from './schema'
+import { AnySchema, Schema } from './schema'
 import { collectSchema, insertSchema, updateSchema } from './schemas'
 
 export async function validateInsert(entity: object) {
@@ -32,6 +33,25 @@ export async function validateUpdate(entity: object) {
     Object.assign(entity, result.data)
   } else {
     throw new ZodValidationError(entity, result.error.issues)
+  }
+}
+
+async function validateUniqueness(entity: object, schema: AnySchema) {
+  for (const [field, column] of objectEntries(schema.columns)) {
+    const options = column.uniqueOptions
+    if (options == null) { continue }
+
+    const {scope} = options
+  }
+}
+
+export function applyDefaults(entity: object) {
+  const schema = collectSchema(entity.constructor as AnyConstructor)
+
+  for (const [key, column] of Object.entries(schema.columns)) {
+    if (column.zod instanceof z.ZodDefault) {
+      Object.assign(entity, {[key]: column.zod.def.defaultValue})
+    }
   }
 }
 

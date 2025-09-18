@@ -25,9 +25,9 @@ export function oneToMany(...args: any[]) {
 export class OneToManyColumn<E extends object> extends Column<z.ZodType<E[]>> {
 
   constructor(
-    protected readonly entity: string | ((type?: any) => ObjectType<any>),
-    protected readonly inverseSide: string | ((object: any) => any),
-    protected readonly options: RelationOptions = {}
+    public readonly entity: string | ((type?: any) => ObjectType<any>),
+    public readonly inverseSide: string | ((object: any) => any),
+    public readonly options: RelationOptions = {}
   ) {
     super(z.array(z.object() as z.ZodType<E>), {})
   }

@@ -1,3 +1,4 @@
+import { pick } from 'lodash'
 import {
   Column as typeorm_Column,
   ColumnOptions as typeorm_ColumnOptions,
@@ -29,8 +30,7 @@ export class Column<T extends z.ZodType<any>> {
   private _zod: T
   public get zod() { return this._zod }
 
-  protected readonly options: ColumnOptions
-
+  public readonly options: ColumnOptions
 
   public get isReadOnly() {
     if (this.isGenerated) { return true }
@@ -51,28 +51,16 @@ export class Column<T extends z.ZodType<any>> {
 
   // #region Zod passthroughs
   
-  public optional(): Optional<T, this> {
-    this.options.nullable = true
-
-    const optional = this.zod.optional().nullable()
-    return new Proxy(this, {
-      get: (target, prop, receiver) => prop === 'zod' ? optional : Reflect.get(target, prop, receiver)
-    }) as Optional<T, this>
+  public optional(): OptionalColumn<T> {
+    return this.transmute(OptionalColumn)
   }
 
-  public nullable(): Nullable<T, this> {
-    this.options.nullable = true
-
-    const nullable = this.zod.optional()
-    return new Proxy(this, {
-      get: (target, prop, receiver) => prop === 'zod' ? nullable : Reflect.get(target, prop, receiver)
-    }) as Nullable<T, this>
+  public nullable(): NullableColumn<T> {
+    return this.transmute(NullableColumn)
   }
 
-  public default(value: z.output<T>): Default<T, this> {
-    return new Proxy(this, {
-      get: (target, prop, receiver) => prop === 'zod' ? target.zod.default(value) : Reflect.get(target, prop, receiver)
-    }) as Default<T, this>
+  public default(value: z.output<T>): DefaultColumn<T, this> {
+    return this.transmute(DefaultColumn, value)
   }
 
   public check(...checks: Array<z.core.CheckFn<z.core.output<T>> | z.core.$ZodCheck<z.core.output<T>>>) {
@@ -90,12 +78,22 @@ export class Column<T extends z.ZodType<any>> {
     return this
   }
 
+  private transmute<A extends any[], O extends Column<any>>(ctor: new (orig: this, ...args: A) => O, ...args: A) {
+    const column = new ctor(this, ...args)
+    Object.assign(column, pick(this, '_index', '_unique'))
+    return column
+  }
+
   // #endregion
 
   // #region Index & unique
 
   private _index: [string | undefined, IndexOptions] | null = null
   private _unique: [string | undefined, UniqueOptions] | null = null
+
+  public get uniqueOptions() {
+    return this._unique?.[1] ?? null
+  }
 
   public index(options?: IndexOptions): this
   public index(name: string, options?: IndexOptions): this
@@ -189,9 +187,29 @@ export class Column<T extends z.ZodType<any>> {
   // #endregion
 }
 
-export type Optional<T extends z.ZodType<any>, C extends Column<T>> = C & {zod: z.ZodOptional<T>}
-export type Nullable<T extends z.ZodType<any>, C extends Column<T>> = C & {zod: z.ZodNullable<T>}
-export type Default<T extends z.ZodType<any>, C extends Column<T>> = C & {zod: z.ZodDefault<T>}
+export class OptionalColumn<T extends z.ZodType<any>> extends Column<z.ZodNullable<z.ZodOptional<T>>> {
+  constructor(base: Column<T>) {
+    super(base.zod.optional().nullable(), {
+      ...base.options,
+      nullable: true
+    });
+  }
+}
+
+export class NullableColumn<T extends z.ZodType<any>> extends Column<z.ZodNullable<T>> {
+  constructor(base: Column<T>) {
+    super(base.zod.nullable(), {
+      ...base.options,
+      nullable: true
+    });
+  }
+}
+
+export class DefaultColumn<T extends z.ZodType<any>, C extends Column<T>> extends Column<z.ZodDefault<T>> {
+  constructor(base: C, value: z.output<T>) {
+    super(base.zod.default(value), base.options)
+  }
+}
 
 export type ColumnType = Exclude<typeorm_ColumnType, StringConstructor | NumberConstructor | BooleanConstructor | ObjectConstructor | BufferConstructor | DateConstructor>
 export type ColumnOptions = typeorm_ColumnOptions

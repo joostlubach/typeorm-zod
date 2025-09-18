@@ -36,9 +36,9 @@ export function manyToOne(...args: any[]): ManyToOneColumn<z.ZodType<any | undef
 export class ManyToOneColumn<E extends object> extends Column<z.ZodType<E | undefined>> {
 
     constructor(
-      protected readonly entity: string | ((type?: any) => ObjectType<any>),
-      protected readonly inverseSide: string | ((object: any) => any),
-      protected readonly options: RelationOptions = {}
+      public readonly entity: string | ((type?: any) => ObjectType<any>),
+      public readonly inverseSide: string | ((object: any) => any),
+      public readonly options: RelationOptions = {}
     ) {
       super(z.object() as z.ZodType<E>, {})
     }
@@ -99,7 +99,7 @@ export class ForeignKeyColumn<T extends z.ZodType<any>> extends Column<T> {
   constructor(
     base: T,
     public readonly relationName: string,
-    protected readonly options: Omit<JoinColumnOptions, 'name'> = {}
+    public readonly options: Omit<JoinColumnOptions, 'name'> = {}
   ) {
     super(base, options)
   }
