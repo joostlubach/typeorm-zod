@@ -21,7 +21,7 @@ export const mysql: Typemap = {
   float32:   'float',
   float64:   'double',
   string:    'varchar',
-  binary:    'blob',
+  binary:    'binary',
   date:      'datetime',
   timestamp: 'timestamp',
 }

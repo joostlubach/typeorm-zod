@@ -131,9 +131,12 @@ export class Column<T extends z.ZodType<any>> {
 
   // #region Decorators
 
-  public buildFieldDecorator(_field: string): PropertyDecorator {
+  public buildFieldDecorator(_field: string, options: ColumnOptions = {}): PropertyDecorator {
     return (target: object, prop: string | symbol) => {
-      typeorm_Column(this.options)(target, prop)
+      typeorm_Column({
+        ...this.options,
+        ...options,
+      })(target, prop)
 
       const tableName = getTypeORMTableName(target.constructor)
       const indexDecorator = this.buildIndexDecorator(tableName, prop.toString() )
@@ -141,7 +144,7 @@ export class Column<T extends z.ZodType<any>> {
     }
   }
 
-  public buildClassDecorator(field: string): ClassDecorator {
+  public buildClassDecorator(field: string, options: ColumnOptions = {}): ClassDecorator {
     return (target: ObjectType<object>) => {
       const tableName = getTypeORMTableName(target)
       const uniqueDecorator = this.buildUniqueDecorator(tableName, field)
@@ -185,30 +188,68 @@ export class Column<T extends z.ZodType<any>> {
 
 export class OptionalColumn<T extends z.ZodType<any>> extends Column<z.ZodOptional<T>> {
 
-  constructor(base: Column<T>) {
+  constructor(
+    protected readonly base: Column<T>,
+  ) {
     super(base.zod.optional(), {
       ...base.options,
       nullable: true,
     })
   }
 
+  public get fieldType() {
+    return this.base.fieldType
+  }
+
+  public buildFieldDecorator(field: string, options: ColumnOptions = {}): PropertyDecorator {
+    return this.base.buildFieldDecorator(field, {...options, nullable: true})
+  }
+
+  public buildClassDecorator(field: string, options: ColumnOptions = {}): ClassDecorator {
+    return this.base.buildClassDecorator(field, {...options, nullable: true})
+  }
+
 }
 
 export class NullableColumn<T extends z.ZodType<any>> extends Column<z.ZodNullable<T>> {
 
-  constructor(base: Column<T>) {
+  constructor(private readonly base: Column<T>) {
     super(base.zod.nullable(), {
       ...base.options,
       nullable: true,
     })
   }
 
+  public get fieldType() {
+    return this.base.fieldType
+  }
+
+  public buildFieldDecorator(field: string, options: ColumnOptions = {}): PropertyDecorator {
+    return this.base.buildFieldDecorator(field, {...options, nullable: true})
+  }
+
+  public buildClassDecorator(field: string, options: ColumnOptions = {}): ClassDecorator {
+    return this.base.buildClassDecorator(field, {...options, nullable: true})
+  }
+
 }
 
 export class DefaultColumn<T extends z.ZodType<any>, C extends Column<T>> extends Column<z.ZodDefault<T>> {
 
-  constructor(base: C, value: z.output<T> | (() => z.util.NoUndefined<z.output<T>>)) {
+  constructor(private readonly base: C, value: z.output<T> | (() => z.util.NoUndefined<z.output<T>>)) {
     super(base.zod.default(value), base.options)
+  }
+
+  public get fieldType() {
+    return this.base.fieldType
+  }
+
+  public buildFieldDecorator(field: string, options: ColumnOptions = {}): PropertyDecorator {
+    return this.base.buildFieldDecorator(field, {...options, nullable: true})
+  }
+
+  public buildClassDecorator(field: string, options: ColumnOptions = {}): ClassDecorator {
+    return this.base.buildClassDecorator(field, {...options, nullable: true})
   }
 
 }

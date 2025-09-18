@@ -1,4 +1,4 @@
-import { CreateDateColumn } from 'typeorm'
+import { CreateDateColumn, UpdateDateColumn } from 'typeorm'
 import { z } from 'zod'
 
 import { Column, ColumnOptions } from '../column'
@@ -19,8 +19,8 @@ export class CreateTimestampColumn extends Column<z.ZodDate> {
     })
   }
 
-  public buildFieldDecorator() {
-    return CreateDateColumn(this.options)
+  public buildFieldDecorator(options: ColumnOptions = {}) {
+    return CreateDateColumn({...this.options, ...options})
   }
 
 }
@@ -40,8 +40,8 @@ export class UpdateTimestampColumn extends Column<z.ZodDate> {
     })
   }
 
-  public buildFieldDecorator() {
-    return CreateDateColumn(this.options)
+  public buildFieldDecorator(options: ColumnOptions = {}) {
+    return UpdateDateColumn({...this.options, ...options})
   }
 
 }

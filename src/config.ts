@@ -58,7 +58,7 @@ const config: Config = {
   foreignKeyConstraintNaming: ForeignKeyConstraintNaming.SNAKE,
   indexNaming:                null,
 
-  typemap: typemaps.postgres,
+  typemap: typemaps.mysql,
 
   collation: {
     default:    'utf8mb4_0900_as_cs',

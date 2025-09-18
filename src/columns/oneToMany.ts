@@ -2,7 +2,7 @@ import { ObjectType, OneToMany, RelationOptions } from 'typeorm'
 import { Constructor, isFunction } from 'ytil'
 import { z } from 'zod'
 
-import { Column } from '../column'
+import { Column, ColumnOptions } from '../column'
 import { FieldType } from '../types'
 
 export function oneToMany<E extends object>(
@@ -36,8 +36,11 @@ export class OneToManyColumn<E extends object> extends Column<z.ZodType<E[]>> {
     return FieldType.Relation
   }
 
-  public buildFieldDecorator() {
-    return OneToMany(this.entity, this.inverseSide, this.options)
+  public buildFieldDecorator(_field: string, options: ColumnOptions = {}) {
+    return OneToMany(this.entity, this.inverseSide, {
+      ...this.options,
+      nullable: options.nullable,
+    })
   }
 
 }

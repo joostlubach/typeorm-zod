@@ -4,7 +4,7 @@ import { JoinColumnOptions, JoinTable, ManyToMany, ObjectType, RelationOptions }
 import { Constructor, isFunction } from 'ytil'
 import { z } from 'zod'
 
-import { Column } from '../column'
+import { Column, ColumnOptions } from '../column'
 import { FieldType } from '../types'
 import { getTypeORMTableName } from '../util'
 
@@ -57,15 +57,16 @@ export class ManyToManyColumn<E extends object> extends Column<z.ZodType<E[]>> {
     return FieldType.Relation
   }
 
-  public buildFieldDecorator() {
+  public buildFieldDecorator(_field: string, options: ColumnOptions = {}) {
     const {
       entity,
       inverseSide,
-      options,
       _joinTableName: this_joinTableName,
       _joinColumn: this_joinColumn,
       _inverseJoinColumn: this_inverseJoinColumn,
     } = this
+
+    const mergedOptions = {...this.options, nullable: options.nullable}
 
     return function (target: any, property: string | symbol) {
       const thisSideTableName = getTypeORMTableName(target.constructor)
@@ -89,7 +90,7 @@ export class ManyToManyColumn<E extends object> extends Column<z.ZodType<E[]>> {
         referencedColumnName: 'id',
       }
 
-      ManyToMany(entity, inverseSide, options)(target, property)
+      ManyToMany(entity, inverseSide, mergedOptions)(target, property)
       JoinTable({name: joinTableName, joinColumn, inverseJoinColumn})(target, property)
     }
   }

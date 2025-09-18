@@ -9,7 +9,7 @@ import {
 import { Constructor, isFunction } from 'ytil'
 import { z } from 'zod'
 
-import { Column } from '../column'
+import { Column, ColumnOptions } from '../column'
 import config from '../config'
 import { FieldType } from '../types'
 import { getTypeORMTableName } from '../util'
@@ -57,23 +57,22 @@ export class ManyToOneColumn<E extends object> extends Column<z.ZodType<E | unde
     return FieldType.Relation
   }
 
-  public buildFieldDecorator(field: string) {
+  public buildFieldDecorator(field: string, options: ColumnOptions = {}) {
     const column = this
 
     return function (target: any, property: string | symbol) {
-      const {
-        entity,
-        inverseSide,
-        options,
-      } = column
-
-
-      ManyToOne(entity, inverseSide, options)(target, property)
+      const {entity, inverseSide} = column
 
       const tableName = getTypeORMTableName(target.constructor)
       const foreignKey = column.foreignKey ?? config.foreignKeyNaming(field)
       const referencedColumnName = column.referencedColumnName
       const foreignKeyConstraintName = column.foreignKeyConstraintName ?? config.foreignKeyConstraintNaming?.(tableName, field)
+
+      ManyToOne(entity, inverseSide, {
+        ...column.options,
+        nullable: options.nullable,
+      })(target, property)
+
       JoinColumn({
         name: foreignKey,
         referencedColumnName,
@@ -105,21 +104,11 @@ export class ForeignKeyColumn<T extends z.ZodType<any>> extends Column<T> {
     super(base, options)
   }
 
-  private _nullable: boolean = false
-  public nullable() {
-    this._nullable = true
-    return super.nullable()
-  }
-
-  public buildFieldDecorator(field: string): PropertyDecorator {
-    const column = this
-
-    return (target: any, name: string | symbol) => {
-      if (typeof name !== 'string') { return }
-
-      // Place a regular @Column() on this column.
-      typeorm_Column('int', {nullable: column._nullable})(target, name)
-    }
+  public buildFieldDecorator(_field: string, options: ColumnOptions = {}): PropertyDecorator {
+    return typeorm_Column({
+      type: config.typemap.int32,
+      ...options,
+    })
   }
 
 }

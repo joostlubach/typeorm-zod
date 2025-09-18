@@ -7,7 +7,7 @@ export function string<T extends z.ZodString>(base: T, type?: ColumnType, option
 export function string<T extends z.ZodType<string>>(base: T, type?: ColumnType, options?: ColumnOptions): Column<T>
 export function string(type?: ColumnType, options?: ColumnOptions): StringColumn<z.ZodString>
 export function string(...args: any[]): StringColumn<z.ZodString> | Column<z.ZodType<string>> {
-  const base = args[0] instanceof z.ZodString ? args.shift() : z.string()
+  const base = args[0] instanceof z.ZodType ? args.shift() : z.string()
   const type = args.shift() ?? config.typemap.string
   const options = args.shift() ?? {}
 

@@ -6,6 +6,7 @@ import {
 import { z } from 'zod'
 
 import { Column } from '../column'
+import config from '../config'
 import { FieldType } from '../types'
 
 export function primary(type: 'uuid' | 'string'): PrimaryColumn<z.ZodString>
@@ -29,6 +30,17 @@ export class PrimaryColumn<T extends z.ZodType<any>> extends Column<T> {
     public readonly options: PrimaryColumnOptions = {},
   ) {
     super(zod, {})
+  }
+
+  private get columnType() {
+    switch (this.type) {
+    case 'uuid': case 'string':
+      return config.typemap.string
+    case 'number':
+      return config.typemap.number
+    case 'int':
+      return config.typemap.int32
+    }
   }
 
   public generated(strategy: 'increment', options?: PrimaryGeneratedColumnNumericOptions): this
@@ -55,11 +67,14 @@ export class PrimaryColumn<T extends z.ZodType<any>> extends Column<T> {
   }
 
   private buildFieldDecorator_default() {
-    return typeorm_PrimaryColumn(this.type, this.options)
+    return typeorm_PrimaryColumn(this.columnType, this.options)
   }
 
   private getGeneratedFieldDecorator(strategy: any, options?: PrimaryGeneratedColumnOptions) {
-    return () => PrimaryGeneratedColumn(strategy, options)
+    return () => PrimaryGeneratedColumn(strategy, {
+      type: this.columnType,
+      ...options,
+    })
   }
 
 }
