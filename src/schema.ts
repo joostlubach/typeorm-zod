@@ -21,8 +21,11 @@ export class Schema<S extends ColumnShape, D extends Derivations<S> = EmptyObjec
 
   private readonly zod = z.object({}) as z.ZodObject<output<S>>
 
-  private readonly indexes: Array<[string, IndexOptions | {synchronize: false}]> = []
-  private readonly uniques: Array<[string, string[], Omit<TableUniqueOptions, 'name' | 'columnNames'>]> = []
+  private readonly _indexes: Array<[string, IndexOptions | {synchronize: false}]> = []
+  public get indexes() { return this._indexes }
+
+  private readonly _uniques: Array<[string, string[], Omit<TableUniqueOptions, 'name' | 'columnNames'>]> = []
+  public get uniques() { return this._uniques }
 
   public derive<S extends ColumnShape, D extends Derivations<S>, DD extends Derivations<S>>(this: Schema<S, D>, derivations: DD): Schema<S, D & DD> {
     Object.assign(this.derivations, derivations)
@@ -30,12 +33,12 @@ export class Schema<S extends ColumnShape, D extends Derivations<S> = EmptyObjec
   }
 
   public index(name: string, options: IndexOptions | {synchronize: false} = {}): this {
-    this.indexes.push([name, options])
+    this._indexes.push([name, options])
     return this
   }
 
   public unique(name: string, columnNames: string[], options: Omit<TableUniqueOptions, 'name' | 'columnNames'> = {}): this {
-    this.uniques.push([name, columnNames, options])
+    this._uniques.push([name, columnNames, options])
     return this
   }
 

@@ -32,6 +32,6 @@ function trace(decorator: Function, target: object | Function, property: string 
     if (!regexp.test(qualifier)) { return }
   }
 
-  const padding = ' '.repeat(Math.max(0, 24 - qualifier.length))
-  config.logger.info(chalk`{dim [TRACE]} [{underline ${qualifier}}]${padding}@{bold ${decorator.name}}({gray ${JSON.stringify(args)}})`)
+  const padding = ' '.repeat(Math.max(0, 26 - qualifier.length))
+  config.logger.info(chalk`{dim [TRACE]} [{underline ${qualifier}}]${padding} @{bold ${decorator.name}}({gray ${JSON.stringify(args)}})`)
 }

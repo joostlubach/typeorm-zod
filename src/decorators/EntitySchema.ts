@@ -1,8 +1,10 @@
+import { Index, Unique } from 'typeorm'
 import { objectEntries } from 'ytil'
 
 import { Schema } from '../schema'
 import { symbols } from '../symbols'
 import { ColumnShape, Derivations } from '../types'
+import { invokeClassDecorator } from '../util'
 
 export function EntitySchema<S extends ColumnShape, D extends Derivations<S>>(schema: Schema<S, D>): ClassDecorator {
   return function (target: Function) {
@@ -14,6 +16,15 @@ export function EntitySchema<S extends ColumnShape, D extends Derivations<S>>(sc
       if (typeof field !== 'string') { continue }
       column.buildFieldDecorator(field)?.(target.prototype, field)
       column.buildClassDecorator(field)?.(target)
+    }
+
+    // Add any class level indexes.
+    for (const [name, options] of schema.indexes) {
+      invokeClassDecorator(Index, target, name, options)
+    }
+
+    for (const [name, options] of schema.uniques) {
+      invokeClassDecorator(Unique, target, name, options)
     }
   }
 }

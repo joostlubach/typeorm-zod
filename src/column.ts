@@ -202,6 +202,20 @@ export class OptionalColumn<C extends Column<z.ZodType<any>, boolean>> extends C
     })
   }
 
+  public index(options?: IndexOptions): this
+  public index(name: string, options?: IndexOptions): this
+  public index(...args: any[]): this {
+    this.base.index(...args)
+    return this
+  }
+
+  public unique(options?: UniqueOptions): this
+  public unique(name: string, options?: UniqueOptions): this
+  public unique(...args: any[]): this {
+    this.base.index(...args)
+    return this
+  }
+
   public get fieldType() {
     return this.base.fieldType
   }
@@ -225,6 +239,20 @@ export class NullableColumn<C extends Column<z.ZodType<any>, boolean>> extends C
     })
   }
 
+  public index(options?: IndexOptions): this
+  public index(name: string, options?: IndexOptions): this
+  public index(...args: any[]): this {
+    this.base.index(...args)
+    return this
+  }
+
+  public unique(options?: UniqueOptions): this
+  public unique(name: string, options?: UniqueOptions): this
+  public unique(...args: any[]): this {
+    this.base.index(...args)
+    return this
+  }
+
   public get fieldType() {
     return this.base.fieldType
   }
@@ -243,6 +271,20 @@ export class DefaultColumn<C extends Column<z.ZodType<any>, boolean>> extends Co
 
   constructor(private readonly base: C, value: z.output<C['zod']> | (() => z.util.NoUndefined<z.output<C['zod']>>)) {
     super(base.zod.default(value), base.options)
+  }
+
+  public index(options?: IndexOptions): this
+  public index(name: string, options?: IndexOptions): this
+  public index(...args: any[]): this {
+    this.base.index(...args)
+    return this
+  }
+
+  public unique(options?: UniqueOptions): this
+  public unique(name: string, options?: UniqueOptions): this
+  public unique(...args: any[]): this {
+    this.base.index(...args)
+    return this
   }
 
   public get fieldType() {
