@@ -2,7 +2,7 @@ import { IndexOptions, TableUniqueOptions } from 'typeorm'
 import { EmptyObject, objectEntries } from 'ytil'
 import { z } from 'zod'
 
-import { Column } from './column'
+import { Column, DefaultColumn } from './column'
 import { symbols } from './symbols'
 import { ColumnShape, Derivations, output } from './types'
 
@@ -12,7 +12,7 @@ export function schema(columns: ColumnShape, derivations: Derivations<any> = {})
   return new Schema(columns, derivations)
 }
 
-export class Schema<S extends ColumnShape, D extends Derivations<S> = {}> {
+export class Schema<S extends ColumnShape, D extends Derivations<S> = EmptyObject> {
 
   constructor(
     public readonly columns: S,
@@ -54,7 +54,7 @@ export class Schema<S extends ColumnShape, D extends Derivations<S> = {}> {
     return this
   }
 
-  public resolve(buildType: (column: Column<any>, key: keyof columnsOf<this>) => z.ZodType | null): z.ZodObject {
+  public resolve(buildType: (column: Column<z.ZodType<any>, boolean>, key: keyof columnsOf<this>) => z.ZodType | null): z.ZodObject {
     const shape: Record<any, z.ZodType> = {}
 
     for (const [key, column] of objectEntries(this.columns)) {
@@ -117,39 +117,42 @@ export type schemaOf<T> =
     : never
 
 /**
- * Retrieves the attributes of any instance of entities created with the given schema. Derived properties
- * are marked as readonly here.
+ * Retrieves the attributes of any instance of entities created with the given schema.
+ * 
+ * - Derived columns are marked as readonly here.
+ * - Generated columns are marked as readonly here.
  */
-export type attributesOf<T> = schemaOf<T> extends never
-  ? {[K in keyof T]: T[K]}
-  : markDerivedAsReadonly<schemaOf<T>>
-
-/**
- * Retrieves the input shape of entities created with the given schema. Derived properties are excluded
- * here.
- */
-export type inputOf<T> = schemaOf<T> extends never
-  ? {[K in keyof T]: T[K]}
-  : omitDerived<schemaOf<T>>
-
-/**
- * Utility type to mark all derived properties from the schema as readonly.
- */
-type markDerivedAsReadonly<S extends Schema<any, any> | never> = S extends never ? never : {
-  [K in keyof columnsOf<S> as (K extends keyof derivationsOf<S> ? never : K)]: output<columnsOf<S>[K]>
+export type schemaAttributes<T> = schemaOf<T> extends never ? {
+  [K in keyof T]: T[K]
+} : {
+  [K in keyof schemaOf<T>['columns'] as (
+    K extends keyof derivationsOf<schemaOf<T>> ? never : K
+  )]: output<schemaOf<T>>[K]
 } & {
-  readonly [K in keyof columnsOf<S> as (K extends keyof derivationsOf<S> ? K : never)]: output<columnsOf<S>[K]>
+  readonly [K in keyof schemaOf<T>['columns'] as (
+    K extends keyof derivationsOf<schemaOf<T>> ? K : never
+  )]: output<schemaOf<T>>[K]
 }
 
 /**
- * Utility type to omit all derived and default properties from the schema.
+ * Retrieves the input shape of entities created with the given schema.
+ * 
+ * - Derived columns are excluded here.
+ * - Generated columns are excluded here.
+ * - Columns with defaults are made optional here.
  */
-type omitDerived<S extends Schema<any, any> | never> = S extends never ? never : {
-  [K in keyof columnsOf<S> as (
-    K extends keyof derivationsOf<S> ? never : K
-  )]: z.input<toZod<columnsOf<S>>[K]>
-}
-
-type toZod<S extends ColumnShape> = {
-  [K in keyof S]: S[K]['zod']
+export type schemaInput<T> = schemaOf<T> extends never ? {
+  [K in keyof T]: T[K]
+} : {
+  [K in keyof schemaOf<T>['columns'] as (
+    schemaOf<T>['columns'][K] extends DefaultColumn<any> ? never :
+    schemaOf<T>['columns'][K] extends Column<any, true> ? never :
+    K extends keyof derivationsOf<schemaOf<T>> ? never :
+    K
+  )]: output<schemaOf<T>>[K]
+} & {
+  [K in keyof schemaOf<T>['columns'] as (
+    schemaOf<T>['columns'][K] extends DefaultColumn<any> ? K :
+    never
+  )]?: output<schemaOf<T>>[K]
 }

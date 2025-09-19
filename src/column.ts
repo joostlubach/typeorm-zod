@@ -15,7 +15,7 @@ import config from './config'
 import { FieldType } from './types'
 import { getTypeORMTableName, invokeClassDecorator, invokePropertyDecorator } from './util'
 
-export class Column<T extends z.ZodType<any>> {
+export class Column<T extends z.ZodType<any>, Generated extends boolean = false> {
 
   constructor(
     zod: T,
@@ -37,8 +37,8 @@ export class Column<T extends z.ZodType<any>> {
     return this.zod instanceof z.ZodReadonly
   }
   
-  public get isGenerated() {
-    return this.fieldType === FieldType.Generated
+  public get isGenerated(): Generated {
+    return (this.fieldType === FieldType.Generated) as Generated
   }
   
   public get fieldType() {
@@ -51,15 +51,15 @@ export class Column<T extends z.ZodType<any>> {
 
   // #region Zod passthroughs
   
-  public optional(): OptionalColumn<T> {
+  public optional(): OptionalColumn<this> {
     return this.transmute(OptionalColumn)
   }
 
-  public nullable(): NullableColumn<T> {
+  public nullable(): NullableColumn<this> {
     return this.transmute(NullableColumn)
   }
 
-  public default(value: z.output<T> | (() => z.util.NoUndefined<z.output<T>>)): DefaultColumn<T, this> {
+  public default(value: z.output<T> | (() => z.util.NoUndefined<z.output<T>>)): DefaultColumn<this> {
     return this.transmute(DefaultColumn, value)
   }
 
@@ -78,7 +78,7 @@ export class Column<T extends z.ZodType<any>> {
     return this
   }
 
-  private transmute<A extends any[], O extends Column<any>>(ctor: new (orig: this, ...args: A) => O, ...args: A) {
+  protected transmute<A extends any[], O extends Column<any, any>>(ctor: new (orig: this, ...args: A) => O, ...args: A) {
     const column = new ctor(this, ...args)
     Object.assign(column, pick(this, '_index', '_unique'))
     return column
@@ -191,10 +191,10 @@ export class Column<T extends z.ZodType<any>> {
 
 }
 
-export class OptionalColumn<T extends z.ZodType<any>> extends Column<z.ZodOptional<T>> {
+export class OptionalColumn<C extends Column<z.ZodType<any>, boolean>> extends Column<z.ZodOptional<C['zod']>> {
 
   constructor(
-    protected readonly base: Column<T>,
+    protected readonly base: C,
   ) {
     super(base.zod.optional(), {
       ...base.options,
@@ -216,9 +216,9 @@ export class OptionalColumn<T extends z.ZodType<any>> extends Column<z.ZodOption
 
 }
 
-export class NullableColumn<T extends z.ZodType<any>> extends Column<z.ZodNullable<T>> {
+export class NullableColumn<C extends Column<z.ZodType<any>, boolean>> extends Column<z.ZodNullable<C['zod']>> {
 
-  constructor(private readonly base: Column<T>) {
+  constructor(private readonly base: C) {
     super(base.zod.nullable(), {
       ...base.options,
       nullable: true,
@@ -239,9 +239,9 @@ export class NullableColumn<T extends z.ZodType<any>> extends Column<z.ZodNullab
 
 }
 
-export class DefaultColumn<T extends z.ZodType<any>, C extends Column<T>> extends Column<z.ZodDefault<T>> {
+export class DefaultColumn<C extends Column<z.ZodType<any>, boolean>> extends Column<z.ZodDefault<C['zod']>> {
 
-  constructor(private readonly base: C, value: z.output<T> | (() => z.util.NoUndefined<z.output<T>>)) {
+  constructor(private readonly base: C, value: z.output<C['zod']> | (() => z.util.NoUndefined<z.output<C['zod']>>)) {
     super(base.zod.default(value), base.options)
   }
 
@@ -262,17 +262,17 @@ export class DefaultColumn<T extends z.ZodType<any>, C extends Column<T>> extend
 export type ColumnType = Exclude<typeorm_ColumnType, StringConstructor | NumberConstructor | BooleanConstructor | ObjectConstructor | BufferConstructor | DateConstructor>
 export type ColumnOptions = typeorm_ColumnOptions
 
-export function modifier<C extends Column<any>, K extends keyof C['zod']>(
+export function modifier<C extends Column<any, any>, K extends keyof C['zod']>(
   target: () => C['zod'],
   key: K,
 ): ColumnModifier<C['zod'][K]> {
-  return function (this: Column<any>, ...args: any[]) {
+  return function (this: Column<z.ZodType<any>, boolean>, ...args: any[]) {
     const tgt = target()
     const method = tgt[key] as AnyFunction
     const retval = method.call(tgt, ...args)
     if (retval === this.zod) { return this }
     if (retval instanceof z.ZodType) {
-      const ColumnClass = this.constructor as Constructor<Column<any>>
+      const ColumnClass = this.constructor as Constructor<Column<z.ZodType<any>, boolean>>
       return new ColumnClass(retval, this.options)
     } else {
       return retval

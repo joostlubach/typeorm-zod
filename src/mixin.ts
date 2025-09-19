@@ -1,7 +1,7 @@
 import { AnyConstructor, ConstructorParams } from 'ytil'
 import { z } from 'zod'
 
-import { attributesOf, schema, Schema } from './schema'
+import { schema, Schema, schemaAttributes } from './schema'
 import { symbols } from './symbols'
 
 export function mixin<S extends Schema<any, any>, Ctor extends AnyConstructor>(schema: S, Base: Ctor): Mixin<typeof schema, Ctor>
@@ -22,7 +22,7 @@ export type Mixin<S extends Schema<any, any>, Base extends AnyConstructor> = (
     & (
       new (...args: ConstructorParams<Base>) => (
         // Mixin all attributes of the schema.
-        & attributesOf<{[symbols.schema]: S}>
+        & schemaAttributes<{[symbols.schema]: S}>
 
         // Expose the schema as a readonly (virtual) property on all instances. Note that this property is not there
         // at runtime. See the note above for why this is unfortunately necessary.
@@ -42,7 +42,7 @@ export type Mixin<S extends Schema<any, any>, Base extends AnyConstructor> = (
         & InstanceType<Base>
 
         // Mixin all attributes of the schema.
-        & attributesOf<{[symbols.schema]: S}>
+        & schemaAttributes<{[symbols.schema]: S}>
 
         // Expose the schema as a readonly (virtual) property on all instances. Note that this property is not there
         // at runtime. See the note above for why this is unfortunately necessary.

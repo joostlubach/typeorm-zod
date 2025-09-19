@@ -8,7 +8,7 @@ export function create_timestamp(options: ColumnOptions = {}) {
   return new CreateTimestampColumn(options)
 }
 
-export class CreateTimestampColumn extends Column<z.ZodDate> {
+export class CreateTimestampColumn extends Column<z.ZodDate, true> {
 
   constructor(
     options?: ColumnOptions,
@@ -29,7 +29,7 @@ export function update_timestamp(options: ColumnOptions = {}) {
   return new UpdateTimestampColumn(options)
 }
 
-export class UpdateTimestampColumn extends Column<z.ZodDate> {
+export class UpdateTimestampColumn extends Column<z.ZodDate, true> {
 
   constructor(
     options?: ColumnOptions,

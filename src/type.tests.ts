@@ -1,18 +1,29 @@
 import { FindOptionsWhere } from 'typeorm'
 import { z } from 'zod'
 
-import { boolean, int32, string } from './columns'
+import {
+  boolean,
+  create_timestamp,
+  enum as enum_,
+  int32,
+  string,
+  update_timestamp,
+} from './columns'
+import { primary } from './columns/primary'
 import { mixin } from './mixin'
-import { attributesOf, columnsOf, derivationsOf, inputOf, schema, schemaOf } from './schema'
+import { columnsOf, derivationsOf, schema, schemaAttributes, schemaInput, schemaOf } from './schema'
 
 // #region Type assertions
 
 const base = schema({
-  id: int32(),
+  id:         primary().generated(),
+  created_at: create_timestamp(),
+  updated_at: update_timestamp(),
 })
 
 const user = schema({
   email:  string(z.email()),
+  role:   enum_(['admin', 'user'] as const).default('user'),
   active: boolean(),
 }).derive({
   active: (obj) => obj.email != null,
@@ -29,7 +40,8 @@ class User1 extends mixin(user, Base) {}
 class User2 extends mixin(user, NonTZBase) {}
 class User3 {
 
-  email!: string 
+  email!: string
+  role!: 'admin' | 'user'
 
 }
 
@@ -67,35 +79,40 @@ const _sb4: User3Schema2 = {} as User3Schema1
 
 // Check 2 - Inputs
 
-const x = z.object({email: z.string()})
-type T = z.input<typeof x>
+type User1Input = schemaInput<User1> // {email: string, role?: 'admin' | 'user}
+type User2Input = schemaInput<User2> // {email: string, role?: 'admin' | 'user}
+type User3Input = schemaInput<User3> // {email: string, role: 'admin' | 'user} (falls back on TS shape)
 
-type User1Input = inputOf<User1> // {id: number, email: string}
-type User2Input = inputOf<User2> // {email: string}
-type User3Input = inputOf<User3> // {email: string} (falls back on TS shape)
-
-const _i1ok: User1Input = {id: 1, email: 'test@example.com'}
-const _i2ok: User2Input = {email: 'test@example.com'}
-const _i3ok: User3Input = {email: 'test@example.com'}
+const _i1ok: User1Input = {email: 'test@example.com'}
+const _i2ok: User2Input = {email: 'test@example.com', role: 'admin'}
+const _i3ok: User3Input = {email: 'test@example.com', role: 'admin'}
 
 // @ts-expect-error
-const _i1err1: User1Input = {id: '1', email: 'test@example.com'}
+const _i1err1: User1Input = {id: 1, email: 'test@example.com'}
 // @ts-expect-error
-const _i1err2: User1Input = {id: '1', email: 100}
+const _i1err2: User1Input = {email: 100}
 // @ts-expect-error
-const _i2err1: User2Input = {email: 100}
+const _i1err3: User1Input = {email: 'test@example.com', role: 'unknown'}
+// @ts-expect-error
+const _i2err1: User2Input = {id: 1, email: 'test@example.com'}
+// @ts-expect-error
+const _i2err2: User2Input = {email: 100}
+// @ts-expect-error
+const _i2err3: User2Input = {email: 'test@example.com', role: 'unknown'}
 // @ts-expect-error
 const _i3err1: User3Input = {unknown: 'test'}
+// @ts-expect-error
+const _i3err2: User3Input = {email: '', role: 'unknown'}
 
 // Check 3 - Attributes
 
-type User1Attributes = attributesOf<User1> // {id: number, email: string, readonly active: boolean}
-type User2Attributes = attributesOf<User2> // {email: string, readonly active: boolean}
-type User3Attributes = attributesOf<User3> // {email: string} (falls back on TS shape)
+type User1Attributes = schemaAttributes<User1> // {id: number, email: string, role: 'admin' | 'user', readonly active: boolean}
+type User2Attributes = schemaAttributes<User2> // {id: number, email: string, role: 'admin' | 'user', readonly active: boolean}
+type User3Attributes = schemaAttributes<User3> // {email: string, role: 'admin' | 'user'} (falls back on TS shape)
 
-const _a1ok: User1Attributes = {id: 1, email: 'test@example.com', active: true}
-const _a2ok: User2Attributes = {email: 'test@example.com', active: true}
-const _a3ok: User3Attributes = {email: 'test@example.com'}
+const _a1ok: User1Attributes = {id: 1, email: 'test@example.com', role: 'admin', active: true, created_at: new Date(), updated_at: new Date()}
+const _a2ok: User2Attributes = {email: 'test@example.com', role: 'admin', active: true}
+const _a3ok: User3Attributes = {email: 'test@example.com', role: 'admin'}
 
 // @ts-expect-error
 const _a1err1: User1Attributes = {id: '1', email: 'test@example.com', active: true}

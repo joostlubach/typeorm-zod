@@ -1,11 +1,11 @@
 import {
   PrimaryColumn as typeorm_PrimaryColumn,
   PrimaryColumnOptions,
-  PrimaryGeneratedColumn,
+  PrimaryGeneratedColumn as typeorm_PrimaryGeneratedColumn,
 } from 'typeorm'
 import { z } from 'zod'
 
-import { Column } from '../column'
+import { Column, ColumnOptions } from '../column'
 import config from '../config'
 import { FieldType } from '../types'
 import { invokePropertyDecorator } from '../util'
@@ -15,7 +15,7 @@ export function primary(type?: 'int' | 'number'): PrimaryColumn<z.ZodNumber>
 export function primary(
   type: 'uuid' | 'int' | 'string' | 'number' = 'int',
   options: PrimaryColumnOptions = {},
-): PrimaryColumn<any> {
+): PrimaryColumn<z.ZodType<any>> {
   const zod = type === 'uuid' || type === 'string'
     ? z.string()
     : z.int()
@@ -23,17 +23,17 @@ export function primary(
   return new PrimaryColumn(zod, type, options)
 }
 
-export class PrimaryColumn<T extends z.ZodType<any>> extends Column<T> {
+export class PrimaryColumn<T extends z.ZodType<any>> extends Column<T, false> {
 
   constructor(
     zod: T,
-    private readonly type: 'uuid' | 'int' | 'string' | 'number',
+    public readonly type: 'uuid' | 'int' | 'string' | 'number',
     public readonly options: PrimaryColumnOptions = {},
   ) {
     super(zod, {})
   }
 
-  private get columnType() {
+  public get columnType() {
     switch (this.type) {
     case 'uuid': case 'string':
       return config.typemap.string
@@ -44,39 +44,44 @@ export class PrimaryColumn<T extends z.ZodType<any>> extends Column<T> {
     }
   }
 
-  public generated(strategy: 'increment', options?: PrimaryGeneratedColumnNumericOptions): this
-  public generated(strategy: 'uuid', options?: PrimaryGeneratedColumnUUIDOptions): this
-  public generated(strategy: 'rowid', options?: PrimaryGeneratedColumnUUIDOptions): this
-  public generated(strategy: 'identity', options?: PrimaryGeneratedColumnIdentityOptions): this
-  public generated(options?: PrimaryGeneratedColumnNumericOptions): this
-  public generated(...args: any[]): this {
+  public generated(strategy: 'increment', options?: PrimaryGeneratedColumnNumericOptions): PrimaryGeneratedColumn<this>
+  public generated(strategy: 'uuid', options?: PrimaryGeneratedColumnUUIDOptions): PrimaryGeneratedColumn<this>
+  public generated(strategy: 'rowid', options?: PrimaryGeneratedColumnUUIDOptions): PrimaryGeneratedColumn<this>
+  public generated(strategy: 'identity', options?: PrimaryGeneratedColumnIdentityOptions): PrimaryGeneratedColumn<this>
+  public generated(options?: PrimaryGeneratedColumnNumericOptions): PrimaryGeneratedColumn<this>
+  public generated(...args: any[]): PrimaryGeneratedColumn<this> {
     const strategy = typeof args[0] === 'string' ? args.shift() : true
-    const options = args[0] as PrimaryGeneratedColumnOptions | undefined
-
-    this.buildFieldDecorator = this.getGeneratedFieldDecorator(strategy, options)
-    return this
+    const options = (args[0] ?? {}) as PrimaryGeneratedColumnOptions
+    
+    return this.transmute(PrimaryGeneratedColumn, strategy, options)
   }
 
-  public buildFieldDecorator = this.buildFieldDecorator_default
-
-  public get fieldType() {
-    if (this.buildFieldDecorator === this.buildFieldDecorator_default) {
-      return FieldType.Column
-    } else {
-      return FieldType.Generated
-    }
-  }
-
-  private buildFieldDecorator_default() {
+  public buildFieldDecorator() {
     return (target: object, property: string | symbol) => {
       return invokePropertyDecorator(typeorm_PrimaryColumn, target, property, this.columnType, this.options)
     }
   }
 
-  private getGeneratedFieldDecorator(strategy: any, options?: PrimaryGeneratedColumnOptions) {
-    return () => (target: object, property: string | symbol) => {
-      return invokePropertyDecorator(PrimaryGeneratedColumn, target, property, {
-        type: this.columnType,
+}
+
+export class PrimaryGeneratedColumn<C extends PrimaryColumn<z.ZodType<any>>> extends Column<C['zod'], true> {
+
+  constructor(
+    protected readonly base: C,
+    public readonly strategy: 'increment' | 'uuid' | 'rowid' | 'identity',
+    public readonly options: PrimaryGeneratedColumnOptions,
+  ) {
+    super(base.zod, base.options)
+  }
+
+  public get fieldType() {
+    return FieldType.Generated
+  }
+
+  public buildFieldDecorator(field: string, options: ColumnOptions = {}): PropertyDecorator {
+    return (target: object, property: string | symbol) => {
+      return invokePropertyDecorator(typeorm_PrimaryGeneratedColumn, target, property, {
+        type: this.base.columnType,
         ...options,
       })
     }
