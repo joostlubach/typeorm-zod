@@ -6,7 +6,7 @@ import { z } from 'zod'
 
 import { Column, ColumnOptions } from '../column'
 import { FieldType } from '../types'
-import { getTypeORMTableName } from '../util'
+import { getTypeORMTableName, invokePropertyDecorator } from '../util'
 
 export function manyToMany<E extends object>(
   entity: ((type?: any) => Constructor<E>) | string,
@@ -90,8 +90,8 @@ export class ManyToManyColumn<E extends object> extends Column<z.ZodType<E[]>> {
         referencedColumnName: 'id',
       }
 
-      ManyToMany(entity, inverseSide, mergedOptions)(target, property)
-      JoinTable({name: joinTableName, joinColumn, inverseJoinColumn})(target, property)
+      invokePropertyDecorator(ManyToMany, target, property, entity, inverseSide, mergedOptions)
+      invokePropertyDecorator(JoinTable, target, property, {name: joinTableName, joinColumn, inverseJoinColumn})
     }
   }
 

@@ -13,7 +13,7 @@ import { z } from 'zod'
 
 import config from './config'
 import { FieldType } from './types'
-import { getTypeORMTableName } from './util'
+import { getTypeORMTableName, invokeClassDecorator, invokePropertyDecorator } from './util'
 
 export class Column<T extends z.ZodType<any>> {
 
@@ -133,10 +133,10 @@ export class Column<T extends z.ZodType<any>> {
 
   public buildFieldDecorator(_field: string, options: ColumnOptions = {}): PropertyDecorator {
     return (target: object, prop: string | symbol) => {
-      typeorm_Column({
+      invokePropertyDecorator(typeorm_Column, target, prop, {
         ...this.options,
         ...options,
-      })(target, prop)
+      })
 
       const tableName = getTypeORMTableName(target.constructor)
       const indexDecorator = this.buildIndexDecorator(tableName, prop.toString() )
@@ -159,10 +159,13 @@ export class Column<T extends z.ZodType<any>> {
       name = config.indexNaming?.(tableName, field, false),
       options,
     ] = this._index
-    if (name == null) {
-      return Index(options)
-    } else {
-      return Index(name, options)
+
+    return (target: object, property: string | symbol) => {
+      if (name == null) {
+        invokePropertyDecorator(Index, target, property, options)
+      } else {
+        invokePropertyDecorator(Index, target, property, name, options)
+      }
     }
   }
 
@@ -175,10 +178,12 @@ export class Column<T extends z.ZodType<any>> {
     ] = this._unique
     const fields = options.scope != null ? [...wrapArray(options.scope), field] : [field]
 
-    if (name == null) {
-      return Unique(fields)
-    } else {
-      return Unique(name, fields)
+    return (target: Function) => {
+      if (name == null) {
+        invokeClassDecorator(Unique, target, fields)
+      } else {
+        invokeClassDecorator(Unique, target, name, fields)
+      }
     }
   }
 
@@ -245,11 +250,11 @@ export class DefaultColumn<T extends z.ZodType<any>, C extends Column<T>> extend
   }
 
   public buildFieldDecorator(field: string, options: ColumnOptions = {}): PropertyDecorator {
-    return this.base.buildFieldDecorator(field, {...options, nullable: true})
+    return this.base.buildFieldDecorator(field, options)
   }
 
   public buildClassDecorator(field: string, options: ColumnOptions = {}): ClassDecorator {
-    return this.base.buildClassDecorator(field, {...options, nullable: true})
+    return this.base.buildClassDecorator(field, options)
   }
 
 }

@@ -4,6 +4,7 @@ import { z } from 'zod'
 
 import { Column, ColumnOptions } from '../column'
 import { FieldType } from '../types'
+import { invokePropertyDecorator } from '../util'
 
 export function oneToMany<E extends object>(
   entity: ((type?: any) => Constructor<E>) | string,
@@ -37,10 +38,12 @@ export class OneToManyColumn<E extends object> extends Column<z.ZodType<E[]>> {
   }
 
   public buildFieldDecorator(_field: string, options: ColumnOptions = {}) {
-    return OneToMany(this.entity, this.inverseSide, {
-      ...this.options,
-      nullable: options.nullable,
-    })
+    return (target: object, property: string | symbol) => {
+      invokePropertyDecorator(OneToMany, target, property, this.entity, this.inverseSide, {
+        ...this.options,
+        nullable: options.nullable,
+      })
+    }
   }
 
 }

@@ -17,6 +17,9 @@ export interface Config {
   }
 
   useHooksForValidation: boolean
+  
+  logger: LoggerInterface
+  trace: boolean | string
 }
 
 export type ForeignKeyNaming = (relationName: string) => string
@@ -53,6 +56,13 @@ export interface Typemap {
   timestamp: ColumnType
 }
 
+export interface LoggerInterface {
+  log: (message?: any, ...optionalParams: any[]) => void
+  info: (message?: any, ...optionalParams: any[]) => void
+  warn: (message?: any, ...optionalParams: any[]) => void
+  error: (message?: any, ...optionalParams: any[]) => void
+}
+
 const config: Config = {
   foreignKeyNaming:           ForeignKeyNaming.SNAKE,
   foreignKeyConstraintNaming: ForeignKeyConstraintNaming.SNAKE,
@@ -66,6 +76,8 @@ const config: Config = {
   },
 
   useHooksForValidation: true,
+  logger:                console,
+  trace:                 process.env.TYPEORM_ZOD_TRACE === '1' ? true : (process.env.TYPEORM_ZOD_TRACE ?? false),
 }
 
 export default config

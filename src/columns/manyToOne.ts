@@ -12,7 +12,7 @@ import { z } from 'zod'
 import { Column, ColumnOptions } from '../column'
 import config from '../config'
 import { FieldType } from '../types'
-import { getTypeORMTableName } from '../util'
+import { getTypeORMTableName, invokePropertyDecorator } from '../util'
 
 // #region manyToOne
 
@@ -68,16 +68,16 @@ export class ManyToOneColumn<E extends object> extends Column<z.ZodType<E | unde
       const referencedColumnName = column.referencedColumnName
       const foreignKeyConstraintName = column.foreignKeyConstraintName ?? config.foreignKeyConstraintNaming?.(tableName, field)
 
-      ManyToOne(entity, inverseSide, {
+      invokePropertyDecorator(ManyToOne, target, property, entity, inverseSide, {
         ...column.options,
         nullable: options.nullable,
-      })(target, property)
+      })
 
-      JoinColumn({
+      invokePropertyDecorator(JoinColumn, target, property, {
         name: foreignKey,
         referencedColumnName,
         foreignKeyConstraintName, 
-      })(target, property)
+      })
 
       const indexDecorator = column.buildIndexDecorator(tableName, field)
       indexDecorator?.(target, property)
@@ -105,10 +105,12 @@ export class ForeignKeyColumn<T extends z.ZodType<any>> extends Column<T> {
   }
 
   public buildFieldDecorator(_field: string, options: ColumnOptions = {}): PropertyDecorator {
-    return typeorm_Column({
-      type: config.typemap.int32,
-      ...options,
-    })
+    return (target: object, property: string | symbol) => {
+      invokePropertyDecorator(typeorm_Column, target, property, {
+        type: config.typemap.int32,
+        ...options,
+      })
+    }
   }
 
 }

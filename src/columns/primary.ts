@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { Column } from '../column'
 import config from '../config'
 import { FieldType } from '../types'
+import { invokePropertyDecorator } from '../util'
 
 export function primary(type: 'uuid' | 'string'): PrimaryColumn<z.ZodString>
 export function primary(type?: 'int' | 'number'): PrimaryColumn<z.ZodNumber>
@@ -67,14 +68,18 @@ export class PrimaryColumn<T extends z.ZodType<any>> extends Column<T> {
   }
 
   private buildFieldDecorator_default() {
-    return typeorm_PrimaryColumn(this.columnType, this.options)
+    return (target: object, property: string | symbol) => {
+      return invokePropertyDecorator(typeorm_PrimaryColumn, target, property, this.columnType, this.options)
+    }
   }
 
   private getGeneratedFieldDecorator(strategy: any, options?: PrimaryGeneratedColumnOptions) {
-    return () => PrimaryGeneratedColumn(strategy, {
-      type: this.columnType,
-      ...options,
-    })
+    return () => (target: object, property: string | symbol) => {
+      return invokePropertyDecorator(PrimaryGeneratedColumn, target, property, {
+        type: this.columnType,
+        ...options,
+      })
+    }
   }
 
 }
