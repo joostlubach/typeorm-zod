@@ -1,38 +1,52 @@
-import { AnyConstructor, objectEntries } from 'ytil'
+import { AnyConstructor, objectEntries, objectKeys } from 'ytil'
 import { z } from 'zod'
 
 import { ZodValidationError } from './ZodValidationError'
 import { ForeignKeyColumn } from './columns'
 import { Schema } from './schema'
-import { collectSchema, insertSchema, updateSchema } from './schemas'
+import { collectSchema, updateSchema } from './schemas'
 
 export async function validateInsert(entity: object) {
   const schema = collectSchema(entity.constructor as AnyConstructor)
-  applyDerivations(entity, schema)
   assignForeignKeys(entity, schema)
 
-  const result = await insertSchema(schema).safeParseAsync(entity, {
-    reportInput: true,
-  })
-  if (result.success) {
-    Object.assign(entity, result.data)
-  } else {
-    throw new ZodValidationError(entity, result.error.issues)
+  const validatePass = async () => {
+    const result = await updateSchema(schema).safeParseAsync(entity, {
+      reportInput: true,
+    })
+    if (result.success) {
+      Object.assign(entity, result.data)
+    } else {
+      throw new ZodValidationError(entity, result.error.issues)
+    }
+  }
+
+  await validatePass()
+  if (objectKeys(schema.derivations).length > 0) {
+    applyDerivations(entity, schema)
+    await validatePass()
   }
 }
 
 export async function validateUpdate(entity: object) {
   const schema = collectSchema(entity.constructor as AnyConstructor)
-  applyDerivations(entity, schema)
   assignForeignKeys(entity, schema)
 
-  const result = await updateSchema(schema).safeParseAsync(entity, {
-    reportInput: true,
-  })
-  if (result.success) {
-    Object.assign(entity, result.data)
-  } else {
-    throw new ZodValidationError(entity, result.error.issues)
+  const validatePass = async () => {
+    const result = await updateSchema(schema).safeParseAsync(entity, {
+      reportInput: true,
+    })
+    if (result.success) {
+      Object.assign(entity, result.data)
+    } else {
+      throw new ZodValidationError(entity, result.error.issues)
+    }
+  }
+  
+  await validatePass()
+  if (objectKeys(schema.derivations).length > 0) {
+    applyDerivations(entity, schema)
+    await validatePass()
   }
 }
 
