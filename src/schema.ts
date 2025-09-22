@@ -43,18 +43,21 @@ export class Schema<S extends ColumnShape, D extends Derivations<S> = EmptyObjec
     return this
   }
 
-  public check(...checks: Array<z.core.CheckFn<z.output<typeof this.zod>> | z.core.$ZodCheck<z.output<typeof this.zod>>>): this {
-    this._zod = this.zod.check(...checks)
+  public check(...checks: Array<z.core.CheckFn<output<this>> | z.core.$ZodCheck<output<this>>>): this {
+    // TODO: Fix typing.
+    this._zod = this.zod.check(...checks as any[])
     return this
   }
 
-  public refine(check: (arg: z.output<typeof this.zod>) => unknown | Promise<unknown>, params?: string | z.core.$ZodCustomParams) {
-    this._zod = this.zod.refine(check, params)
+  public refine(check: (arg: output<this>) => unknown | Promise<unknown>, params?: string | z.core.$ZodCustomParams) {
+    // TODO: Fix typing.
+    this._zod = this.zod.refine(check as any, params)
     return this
   }
 
-  public superRefine(refinement: (arg: z.output<typeof this.zod>, ctx: z.core.$RefinementCtx<z.output<typeof this.zod>>) => void | Promise<void>) {
-    this._zod = this.zod.superRefine(refinement)
+  public superRefine(refinement: (arg: output<this>, ctx: z.core.$RefinementCtx<output<this>>) => void | Promise<void>) {
+    // TODO: Fix typing.
+    this._zod = this.zod.superRefine(refinement as any)
     return this
   }
 
