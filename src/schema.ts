@@ -19,7 +19,8 @@ export class Schema<S extends ColumnShape, D extends Derivations<S> = EmptyObjec
     public readonly derivations: D,
   ) {}
 
-  private readonly zod = z.object({}) as z.ZodObject<output<S>>
+  private _zod = z.object({}) as z.ZodObject<output<S>>
+  public get zod() { return this._zod }
 
   private readonly _indexes: Array<[string, IndexOptions | {synchronize: false}]> = []
   public get indexes() { return this._indexes }
@@ -43,17 +44,17 @@ export class Schema<S extends ColumnShape, D extends Derivations<S> = EmptyObjec
   }
 
   public check(...checks: Array<z.core.CheckFn<z.output<typeof this.zod>> | z.core.$ZodCheck<z.output<typeof this.zod>>>): this {
-    this.zod.check(...checks)
+    this._zod = this.zod.check(...checks)
     return this
   }
 
   public refine(check: (arg: z.output<typeof this.zod>) => unknown | Promise<unknown>, params?: string | z.core.$ZodCustomParams) {
-    this.zod.refine(check, params)
+    this._zod = this.zod.refine(check, params)
     return this
   }
 
   public superRefine(refinement: (arg: z.output<typeof this.zod>, ctx: z.core.$RefinementCtx<z.output<typeof this.zod>>) => void | Promise<void>) {
-    this.zod.superRefine(refinement)
+    this._zod = this.zod.superRefine(refinement)
     return this
   }
 
@@ -68,11 +69,11 @@ export class Schema<S extends ColumnShape, D extends Derivations<S> = EmptyObjec
     }
     
     // Build a new schema.
-    const next = z.object(shape)
+    let next = z.object(shape)
 
     // Apply all additional checks from the original schema.
     for (const check of this.zod.def.checks ?? []) {
-      next.check(check as z.core.$ZodCheck<any>)
+      next = next.check(check as z.core.$ZodCheck<any>)
     }
     return next
   }

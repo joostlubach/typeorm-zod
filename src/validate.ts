@@ -3,7 +3,7 @@ import { z } from 'zod'
 
 import { ZodValidationError } from './ZodValidationError'
 import { ForeignKeyColumn } from './columns'
-import { AnySchema, Schema } from './schema'
+import { Schema } from './schema'
 import { collectSchema, insertSchema, updateSchema } from './schemas'
 
 export async function validateInsert(entity: object) {
@@ -33,15 +33,6 @@ export async function validateUpdate(entity: object) {
     Object.assign(entity, result.data)
   } else {
     throw new ZodValidationError(entity, result.error.issues)
-  }
-}
-
-async function validateUniqueness(entity: object, schema: AnySchema) {
-  for (const [field, column] of objectEntries(schema.columns)) {
-    const options = column.uniqueOptions
-    if (options == null) { continue }
-
-    const {scope} = options
   }
 }
 
