@@ -2,8 +2,7 @@ import { IndexOptions, TableUniqueOptions } from 'typeorm'
 import { EmptyObject, objectEntries } from 'ytil'
 import { z } from 'zod'
 
-import { Column } from './column'
-import { DefaultColumn } from './default'
+import { Column, DefaultColumn } from './column'
 import { symbols } from './symbols'
 import { ColumnShape, Derivations, FieldType, output } from './types'
 
