@@ -170,13 +170,13 @@ const s1_ok1 = schema({
 const s1_ok2 = schema({
   foo: string().optional(),
 }).derive({
-  foo: () => undefined,
+  foo: () => null,
 })
 
 const s1_ok3 = schema({
   foo: string().optional(),
 }).derive({
-  foo: () => undefined,
+  foo: () => null,
 })
 
 const s1_ok4 = schema({

@@ -12,6 +12,8 @@ import { AnyFunction, Constructor, wrapArray } from 'ytil'
 import { z } from 'zod'
 
 import config from './config'
+import { DefaultColumn } from './default'
+import { NullableColumn } from './nullable'
 import { FieldType } from './types'
 import { getTypeORMTableName, invokeClassDecorator, invokePropertyDecorator } from './util'
 
@@ -25,6 +27,11 @@ export class Column<T extends z.ZodType<any>, Generated extends boolean = false>
     this.options = typeof typeOrOptions === 'string'
       ? {type: typeOrOptions}
       : (typeOrOptions ?? {})
+  }
+
+  public copy(): this {
+    const This = this.constructor as Constructor<this>
+    return new This(this.zod, {...this.options})
   }
 
   private _zod: T
@@ -49,18 +56,43 @@ export class Column<T extends z.ZodType<any>, Generated extends boolean = false>
     this._zod = zod
   }
 
-  // #region Zod passthroughs
-  
-  public optional(): OptionalColumn<this> {
-    return this.transmute(OptionalColumn)
+  // #region Basic modifiers
+
+  /**
+   * Creates an optional version of this column. Note that the semantics here are _different_ from Zod's
+   * `optional()`. As databases don't have the concept of `undefined`, optional basically means:
+   * `nullable` + `default(null)`.
+   */
+  public optional(): DefaultColumn<NullableColumn<this>> {
+    return this.nullable().default(null)
   }
 
+  /**
+   * Allows the value to take `null`. To also default to `null`, is `.optional()`.
+   */
   public nullable(): NullableColumn<this> {
     return this.transmute(NullableColumn)
   }
 
+  /**
+   * Assigns a default value to this column. Note that this is not a DB-level default, but an application
+   * level default. To use an actual DB level default, use `.opts({default: ...})`.
+   * @param value 
+   * @returns 
+   */
   public default(value: z.output<T> | (() => z.util.NoUndefined<z.output<T>>)): DefaultColumn<this> {
     return this.transmute(DefaultColumn, value)
+  }
+
+  /**
+   * Adds additional options to this column.
+   * @param options 
+   * @returns 
+   */
+  public opts(options: Partial<ColumnOptions>): this {
+    const copy = this.copy()
+    Object.assign(copy.options, options)
+    return copy
   }
 
   public check(...checks: Array<z.core.CheckFn<z.core.output<T>> | z.core.$ZodCheck<z.core.output<T>>>) {
@@ -101,8 +133,9 @@ export class Column<T extends z.ZodType<any>, Generated extends boolean = false>
     const name = typeof args[0] === 'string' ? args.shift() : undefined
     const options = args.shift() ?? {} as IndexOptions
 
-    this._index = [name, options]
-    return this
+    const copy = this.copy()
+    copy._index = [name, options]
+    return copy
   }
 
   public unique(options?: UniqueOptions): this
@@ -111,20 +144,31 @@ export class Column<T extends z.ZodType<any>, Generated extends boolean = false>
     const name = typeof args[0] === 'string' ? args.shift() : undefined
     const options = args[0] ?? {} as UniqueOptions
 
-    this._unique = [name, options]
-    return this
+    const copy = this.copy()
+    copy._unique = [name, options]
+    return copy
   }
 
   // #endregion
 
   // #region Additional modifiers
 
+  /**
+   * Adds a transformer to this column. Also note here, this does not have the same semantics as Zod's
+   * `transform()`. This is a TypeORM-level transformer, which transforms between the database format
+   * and the application format. The transformer therefore has a `from` and a `to` function.
+   * 
+   * For now, we offer no way to apply a (one way) Zod transform, because it sort of doesn't fit the
+   * ORM model. It can however be applied to inner types: `tz.string(z.email().transform(...))`.
+   * TODO: figure out if we want to support this.
+   */
   public transform<Raw>(transformer: ColumnTransformer<z.output<T>, Raw>) {
-    this.options.transformer = {
+    const copy = this.copy()
+    copy.options.transformer = {
       from: raw => raw == null ? null : transformer.from(raw),
       to:   value => value == null ? null : transformer.to(value),
     }
-    return this
+    return copy
   }
 
   // #endregion
@@ -188,116 +232,6 @@ export class Column<T extends z.ZodType<any>, Generated extends boolean = false>
   }
 
   // #endregion
-
-}
-
-export class OptionalColumn<C extends Column<z.ZodType<any>, boolean>> extends Column<z.ZodOptional<C['zod']>> {
-
-  constructor(
-    protected readonly base: C,
-  ) {
-    super(base.zod.optional(), {
-      ...base.options,
-      nullable: true,
-    })
-  }
-
-  public index(options?: IndexOptions): this
-  public index(name: string, options?: IndexOptions): this
-  public index(...args: any[]): this {
-    this.base.index(...args)
-    return this
-  }
-
-  public unique(options?: UniqueOptions): this
-  public unique(name: string, options?: UniqueOptions): this
-  public unique(...args: any[]): this {
-    this.base.index(...args)
-    return this
-  }
-
-  public get fieldType() {
-    return this.base.fieldType
-  }
-
-  public buildFieldDecorator(field: string, options: ColumnOptions = {}): PropertyDecorator {
-    return this.base.buildFieldDecorator(field, {...options, nullable: true})
-  }
-
-  public buildClassDecorator(field: string, options: ColumnOptions = {}): ClassDecorator {
-    return this.base.buildClassDecorator(field, {...options, nullable: true})
-  }
-
-}
-
-export class NullableColumn<C extends Column<z.ZodType<any>, boolean>> extends Column<z.ZodNullable<C['zod']>> {
-
-  constructor(private readonly base: C) {
-    super(base.zod.nullable(), {
-      ...base.options,
-      nullable: true,
-    })
-  }
-
-  public index(options?: IndexOptions): this
-  public index(name: string, options?: IndexOptions): this
-  public index(...args: any[]): this {
-    this.base.index(...args)
-    return this
-  }
-
-  public unique(options?: UniqueOptions): this
-  public unique(name: string, options?: UniqueOptions): this
-  public unique(...args: any[]): this {
-    this.base.index(...args)
-    return this
-  }
-
-  public get fieldType() {
-    return this.base.fieldType
-  }
-
-  public buildFieldDecorator(field: string, options: ColumnOptions = {}): PropertyDecorator {
-    return this.base.buildFieldDecorator(field, {...options, nullable: true})
-  }
-
-  public buildClassDecorator(field: string, options: ColumnOptions = {}): ClassDecorator {
-    return this.base.buildClassDecorator(field, {...options, nullable: true})
-  }
-
-}
-
-export class DefaultColumn<C extends Column<z.ZodType<any>, boolean>> extends Column<z.ZodDefault<C['zod']>> {
-
-  constructor(private readonly base: C, value: z.output<C['zod']> | (() => z.util.NoUndefined<z.output<C['zod']>>)) {
-    super(base.zod.default(value), base.options)
-  }
-
-  public index(options?: IndexOptions): this
-  public index(name: string, options?: IndexOptions): this
-  public index(...args: any[]): this {
-    this.base.index(...args)
-    return this
-  }
-
-  public unique(options?: UniqueOptions): this
-  public unique(name: string, options?: UniqueOptions): this
-  public unique(...args: any[]): this {
-    this.base.index(...args)
-    return this
-  }
-
-  public get fieldType() {
-    return this.base.fieldType
-  }
-
-  public buildFieldDecorator(field: string, options: ColumnOptions = {}): PropertyDecorator {
-    return this.base.buildFieldDecorator(field, options)
-  }
-
-  public buildClassDecorator(field: string, options: ColumnOptions = {}): ClassDecorator {
-    return this.base.buildClassDecorator(field, options)
-  }
 
 }
 

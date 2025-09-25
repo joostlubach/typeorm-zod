@@ -2,9 +2,10 @@ import { IndexOptions, TableUniqueOptions } from 'typeorm'
 import { EmptyObject, objectEntries } from 'ytil'
 import { z } from 'zod'
 
-import { Column, DefaultColumn } from './column'
+import { Column } from './column'
+import { DefaultColumn } from './default'
 import { symbols } from './symbols'
-import { ColumnShape, Derivations, output } from './types'
+import { ColumnShape, Derivations, FieldType, output } from './types'
 
 export function schema<S extends ColumnShape>(shape: S): Schema<S, EmptyObject>
 export function schema<S extends ColumnShape, D extends Derivations<S>>(shape: S, derivations: D): Schema<S, D>
@@ -133,11 +134,15 @@ export type schemaAttributes<T> = schemaOf<T> extends never ? {
   [K in keyof T]: T[K]
 } : {
   [K in keyof schemaOf<T>['columns'] as (
-    K extends keyof derivationsOf<schemaOf<T>> ? never : K
+    K extends keyof derivationsOf<schemaOf<T>> ? never :
+    schemaOf<T>['columns'][K]['fieldType'] extends FieldType.Generated ? never :
+    K
   )]: output<schemaOf<T>>[K]
 } & {
   readonly [K in keyof schemaOf<T>['columns'] as (
-    K extends keyof derivationsOf<schemaOf<T>> ? K : never
+    K extends keyof derivationsOf<schemaOf<T>> ? K :
+    schemaOf<T>['columns'][K]['fieldType'] extends FieldType.Generated ? K :
+    never
   )]: output<schemaOf<T>>[K]
 }
 
