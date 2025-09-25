@@ -50,6 +50,7 @@ export interface Typemap {
   float: ColumnType
   float32: ColumnType
   float64: ColumnType
+  enum: ColumnType
   string: ColumnType
   binary: ColumnType
   date: ColumnType
