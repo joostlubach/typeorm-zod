@@ -27,9 +27,11 @@ export class Column<T extends z.ZodType<any>, Generated extends boolean = false>
       : (typeOrOptions ?? {})
   }
 
-  public copy(): this {
+  public clone(): this {
     const This = this.constructor as Constructor<this>
-    return new This(this.zod, {...this.options})
+    const clone = Object.create(This.prototype)
+    Object.assign(clone, this)
+    return clone
   }
 
   private _zod: T
@@ -88,7 +90,7 @@ export class Column<T extends z.ZodType<any>, Generated extends boolean = false>
    * @returns 
    */
   public opts(options: Partial<ColumnOptions>): this {
-    const copy = this.copy()
+    const copy = this.clone()
     Object.assign(copy.options, options)
     return copy
   }
@@ -131,7 +133,7 @@ export class Column<T extends z.ZodType<any>, Generated extends boolean = false>
     const name = typeof args[0] === 'string' ? args.shift() : undefined
     const options = args.shift() ?? {} as IndexOptions
 
-    const copy = this.copy()
+    const copy = this.clone()
     copy._index = [name, options]
     return copy
   }
@@ -142,7 +144,7 @@ export class Column<T extends z.ZodType<any>, Generated extends boolean = false>
     const name = typeof args[0] === 'string' ? args.shift() : undefined
     const options = args[0] ?? {} as UniqueOptions
 
-    const copy = this.copy()
+    const copy = this.clone()
     copy._unique = [name, options]
     return copy
   }
@@ -161,7 +163,7 @@ export class Column<T extends z.ZodType<any>, Generated extends boolean = false>
    * TODO: figure out if we want to support this.
    */
   public transform<Raw>(transformer: ColumnTransformer<z.output<T>, Raw>) {
-    const copy = this.copy()
+    const copy = this.clone()
     copy.options.transformer = {
       from: raw => raw == null ? null : transformer.from(raw),
       to:   value => value == null ? null : transformer.to(value),
