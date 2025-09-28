@@ -30,6 +30,7 @@ export class Column<T extends z.ZodType<any>, Generated extends boolean = false>
   public clone(): this {
     const This = this.constructor as Constructor<this>
     const clone = Object.create(This.prototype)
+    Object.assign(clone, {constructor: This})
     Object.assign(clone, this)
     return clone
   }
