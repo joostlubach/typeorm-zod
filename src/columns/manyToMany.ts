@@ -1,10 +1,10 @@
 import { snakeCase } from 'lodash'
-import pluralize from 'pluralize'
 import { JoinColumnOptions, JoinTable, ManyToMany, ObjectType, RelationOptions } from 'typeorm'
 import { Constructor, isFunction } from 'ytil'
 import { z } from 'zod'
 
 import { Column, ColumnOptions } from '../column'
+import config from '../config'
 import { FieldType } from '../types'
 import { getTypeORMTableName, invokePropertyDecorator } from '../util'
 
@@ -76,22 +76,28 @@ export class ManyToManyColumn<E extends object> extends Column<z.ZodType<E[]>> {
       const otherSidePrefix = isFunction(entity) ? snakeCase(entity().name) : snakeCase(entity)
 
       const joinTableName = this_joinTableName ?? [
-        pluralize(thisSideTableName),
-        pluralize(otherSideTableName),
+        thisSideTableName,
+        otherSideTableName,
       ].join('_')
       
-      const joinColumn = this_joinColumn ?? {
-        name:                 `${thisSidePrefix}_id`,
-        referencedColumnName: 'id',
+      const joinColumn: JoinColumnOptions = this_joinColumn ?? {
+        name:                     `${thisSidePrefix}_id`,
+        referencedColumnName:     'id',
+        foreignKeyConstraintName: config.foreignKeyConstraintNaming?.(joinTableName, `${thisSidePrefix}_id`)
       }
 
-      const inverseJoinColumn = this_inverseJoinColumn ?? {
-        name:                 `${otherSidePrefix}_id`,
-        referencedColumnName: 'id',
+      const inverseJoinColumn: JoinColumnOptions = this_inverseJoinColumn ?? {
+        name:                    `${otherSidePrefix}_id`,
+        referencedColumnName:    'id',
+        foreignKeyConstraintName: config.foreignKeyConstraintNaming?.(joinTableName, `${otherSidePrefix}_id`)
       }
 
       invokePropertyDecorator(ManyToMany, target, property, entity, inverseSide, mergedOptions)
-      invokePropertyDecorator(JoinTable, target, property, {name: joinTableName, joinColumn, inverseJoinColumn})
+      invokePropertyDecorator(JoinTable, target, property, {
+        name: joinTableName,
+        joinColumn,
+        inverseJoinColumn,
+      })
     }
   }
 
