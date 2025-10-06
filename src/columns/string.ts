@@ -21,17 +21,16 @@ export function string(...args: any[]): StringColumn<z.ZodString> | Column<z.Zod
 export class StringColumn<T extends z.ZodString = z.ZodString> extends Column<T> {
 
   constructor(base: T, typeOrOptions?: ColumnType | ColumnOptions) {
-    super(base, typeOrOptions)
-    this.min(1)
+    super(base.min(1), typeOrOptions)
   }
 
   public optional() {
-    this.min(0)
+    this.modify(this.zod.min(0))
     return super.optional()
   }
 
   public nullable() {
-    this.min(0)
+    this.modify(this.zod.min(0))
     return super.nullable()
   }
 
