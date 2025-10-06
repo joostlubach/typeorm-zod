@@ -1,3 +1,4 @@
+import { isPlainObject } from 'ytil'
 import { z } from 'zod'
 
 import { Column, ColumnOptions, ColumnType } from '../column'
@@ -21,47 +22,52 @@ export function string(...args: any[]): StringColumn<z.ZodString> | Column<z.Zod
 export class StringColumn<T extends z.ZodString = z.ZodString> extends Column<T> {
 
   constructor(base: T, typeOrOptions?: ColumnType | ColumnOptions) {
-    super(base.min(1), typeOrOptions)
+    // We add a minimum length of 1 to string columns by default, unless they are optional or nullable.
+    // This is set back to 0 when calling `.optional()` or `.nullable()`.
+    if (!(isPlainObject<ColumnOptions>(typeOrOptions) && typeOrOptions.nullable)) {
+      base = base.min(1)
+    }
+    super(base, typeOrOptions)
   }
 
   public optional() {
-    this.modify(this.zod.min(0))
-    return super.optional()
+    const superOptional = super.optional
+    return superOptional.call(this.modify(z => z.min(0)))
   }
 
   public nullable() {
-    this.modify(this.zod.min(0))
-    return super.nullable()
+    const superNullable = super.nullable
+    return superNullable.call(this.modify(z => z.min(0)))
   }
 
   public min(minLength: number) {
-    this.modify(this.zod.min(minLength))
-    return this
+    return this.modify(z => z.min(minLength))
   }
 
   public max(maxLength: number) {
-    this.modify(this.zod.max(maxLength))
-    if (typeof this.options.length === 'number') {
-      this.options.length = Math.min(this.options.length, maxLength)
+    const modified = this.modify(z => z.max(maxLength))
+    if (typeof modified.options.length === 'number') {
+      modified.options.length = Math.min(modified.options.length, maxLength)
     } else {
-      this.options.length = maxLength
+      modified.options.length = maxLength
     }
-    return this
+    return modified
   }
 
   public length(length: number) {
-    this.min(length).max(length)
-    return this
+    return this.min(length).max(length)
   }
 
   public collate(collation: string) {
-    this.options.collation = collation
-    return this
+    const modified = this.modify(z => z)
+    modified.options.collation = collation
+    return modified
   }
 
   public ignoreCase() {
-    this.options.collation = config.collation.ignoreCase
-    return this
+    const modified = this.modify(z => z)
+    modified.options.collation = config.collation.ignoreCase
+    return modified
   }
 
 }

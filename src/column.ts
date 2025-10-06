@@ -53,10 +53,6 @@ export class Column<T extends z.ZodType<any>, Generated extends boolean = false>
     return FieldType.Column
   }
 
-  protected modify(zod: T) {
-    this._zod = zod
-  }
-
   // #region Basic modifiers
 
   /**
@@ -115,6 +111,14 @@ export class Column<T extends z.ZodType<any>, Generated extends boolean = false>
     const column = new ctor(this, ...args)
     Object.assign(column, pick(this, '_index', '_unique'))
     return column
+  }
+
+  protected modify(fn: (zod: T) => T) {
+    const copy = Object.create(this.constructor.prototype)
+    copy.constructor = this.constructor
+    Object.assign(copy, this)
+    copy._zod = fn(copy._zod)
+    return copy as this
   }
 
   // #endregion
@@ -330,8 +334,7 @@ export function modifier<C extends Column<any, any>, K extends keyof C['zod']>(
     const retval = method.call(tgt, ...args)
     if (retval === this.zod) { return this }
     if (retval instanceof z.ZodType) {
-      const ColumnClass = this.constructor as Constructor<Column<z.ZodType<any>, boolean>>
-      return new ColumnClass(retval, this.options)
+      return this.modify(() => retval)
     } else {
       return retval
     }
