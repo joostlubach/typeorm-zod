@@ -69,7 +69,7 @@ const config: Config = {
   foreignKeyConstraintNaming: ForeignKeyConstraintNaming.SNAKE,
   indexNaming:                null,
 
-  typemap: typemaps.mysql,
+  typemap: typemaps.abstract,
 
   collation: {
     default:    'utf8mb4_0900_as_cs',

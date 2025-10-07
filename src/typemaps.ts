@@ -1,5 +1,19 @@
 import { Typemap } from './config'
 
+export const abstract: Typemap = {
+  boolean:   'boolean',
+  number:    'int',
+  int32:     'int',
+  float:     'float',
+  float32:   'float',
+  float64:   'float',
+  string:    'varchar',
+  enum:      'enum',
+  binary:    'blob',
+  date:      'date',
+  timestamp: 'datetime',
+}
+
 export const postgres: Typemap = {
   boolean:   'bool',
   number:    'int4',
