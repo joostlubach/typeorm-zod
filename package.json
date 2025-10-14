@@ -40,6 +40,5 @@
     "typeorm": "^0.3.26",
     "ytil": "workspace:^",
     "zod": "^4.1.5"
-  },
-  "packageManager": "pnpm@9.9.0"
+  }
 }
