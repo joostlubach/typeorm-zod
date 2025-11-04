@@ -125,21 +125,25 @@ export class Column<T extends z.ZodType<any>, Generated extends boolean = false>
 
   // #region Index & unique
 
-  private _index: [string | undefined, IndexOptions] | null = null
+  private _index: [string | undefined, IndexOptions] | false | null = null
   private _unique: [string | undefined, UniqueOptions] | null = null
 
   public get uniqueOptions() {
     return this._unique?.[1] ?? null
   }
 
+  public index(enabled: false): this
   public index(options?: IndexOptions): this
   public index(name: string, options?: IndexOptions): this
   public index(...args: any[]): this {
-    const name = typeof args[0] === 'string' ? args.shift() : undefined
-    const options = args.shift() ?? {} as IndexOptions
-
     const copy = this.clone()
-    copy._index = [name, options]
+    if (args[0] === false) {
+      copy._index = false
+    } else {
+      const name = typeof args[0] === 'string' ? args.shift() : undefined
+      const options = args.shift() ?? {} as IndexOptions
+      copy._index = [name, options]
+    }
     return copy
   }
 
@@ -201,13 +205,14 @@ export class Column<T extends z.ZodType<any>, Generated extends boolean = false>
     }
   }
 
-  public buildIndexDecorator(tableName: string, field: string): PropertyDecorator | null {
-    if (this._index == null) { return null }
+  public buildIndexDecorator(tableName: string, field: string, forceUnlessDisabled: boolean = false): PropertyDecorator | null {
+    if (this._index === false) { return null }
+    if (!forceUnlessDisabled && this._index == null) { return null }
 
     const [
       name = config.indexNaming?.(tableName, field, false),
       options,
-    ] = this._index
+    ] = this._index ?? []
 
     return (target: object, property: string | symbol) => {
       if (name == null) {
@@ -252,6 +257,7 @@ export class DefaultColumn<C extends Column<z.ZodType<any>, boolean>> extends Co
   private _base: C
   public get base() { return this._base }
 
+  public index(enabled: false): this
   public index(options?: IndexOptions): this
   public index(name: string, options?: IndexOptions): this
   public index(...args: any[]): this {
@@ -293,6 +299,7 @@ export class NullableColumn<C extends Column<z.ZodType<any>, boolean>> extends C
   private _base: C
   public get base() { return this._base }
 
+  public index(enabled: false): this
   public index(options?: IndexOptions): this
   public index(name: string, options?: IndexOptions): this
   public index(...args: any[]): this {

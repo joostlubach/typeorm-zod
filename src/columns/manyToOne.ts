@@ -79,7 +79,7 @@ export class ManyToOneColumn<E extends object> extends Column<z.ZodType<E | unde
         foreignKeyConstraintName, 
       })
 
-      const indexDecorator = column.buildIndexDecorator(tableName, field)
+      const indexDecorator = column.buildIndexDecorator(tableName, field, true)
       indexDecorator?.(target, property)
     }
   }
