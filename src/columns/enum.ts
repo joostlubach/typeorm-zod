@@ -23,8 +23,8 @@ function _enum(values: any, options: EnumOptions = {}): Column<z.ZodEnum> {
     })
   } else {
     return new Column(zod, {
-      type: config.typemap.string,
-      length: Math.max(...resolvedValues.map(it => it.length))
+      type:   config.typemap.string,
+      length: Math.max(...resolvedValues.map(it => it.length)),
     })
   }
 }

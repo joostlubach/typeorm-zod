@@ -4,10 +4,21 @@ import { getMetadataArgsStorage, ObjectType } from 'typeorm'
 
 import config from './config'
 
+// Store entity table names for cases where metadata isn't available yet
+const entityTableNames = new WeakMap<Function, string>()
+
+export function registerEntityTableName(Entity: Function, name: string) {
+  entityTableNames.set(Entity, name)
+}
+
 export function getTypeORMTableName(Entity: ObjectType<object>) {
   const {tables} = getMetadataArgsStorage() 
   const entry = tables.find(it => it.target === Entity)
   if (entry?.name != null) { return entry.name }
+
+  // Fallback: Check if we stored the name during @Entity decoration
+  const storedName = entityTableNames.get(Entity)
+  if (storedName != null) { return storedName }
 
   return snakeCase(Entity.name)
 }

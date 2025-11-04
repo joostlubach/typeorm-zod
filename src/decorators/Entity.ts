@@ -1,8 +1,10 @@
+import { snakeCase } from 'lodash'
 import { BeforeInsert, BeforeUpdate, Entity as typeorm_Entity, EntityOptions } from 'typeorm'
 
 import config from '../config'
 import { Schema } from '../schema'
 import { symbols } from '../symbols'
+import { registerEntityTableName } from '../util'
 import { validateInsert, validateUpdate } from '../validate'
 import { EntitySchema } from './EntitySchema'
 
@@ -17,6 +19,10 @@ export function Entity(...args: any[]): ClassDecorator {
   }
 
   return function (target: Function) {
+    // Register the entity table name for early access during property decorator execution
+    const tableName = name ?? options.name ?? snakeCase(target.name)
+    registerEntityTableName(target, tableName)
+
     // Invoke the tz.Schema decorator to set the schema on the target.
     EntitySchema(schema)(target)
 

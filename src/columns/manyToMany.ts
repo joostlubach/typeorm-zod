@@ -83,13 +83,13 @@ export class ManyToManyColumn<E extends object> extends Column<z.ZodType<E[]>> {
       const joinColumn: JoinColumnOptions = this_joinColumn ?? {
         name:                     `${thisSidePrefix}_id`,
         referencedColumnName:     'id',
-        foreignKeyConstraintName: config.foreignKeyConstraintNaming?.(joinTableName, `${thisSidePrefix}_id`)
+        foreignKeyConstraintName: config.foreignKeyConstraintNaming?.(joinTableName, `${thisSidePrefix}_id`),
       }
 
       const inverseJoinColumn: JoinColumnOptions = this_inverseJoinColumn ?? {
-        name:                    `${otherSidePrefix}_id`,
-        referencedColumnName:    'id',
-        foreignKeyConstraintName: config.foreignKeyConstraintNaming?.(joinTableName, `${otherSidePrefix}_id`)
+        name:                     `${otherSidePrefix}_id`,
+        referencedColumnName:     'id',
+        foreignKeyConstraintName: config.foreignKeyConstraintNaming?.(joinTableName, `${otherSidePrefix}_id`),
       }
 
       invokePropertyDecorator(ManyToMany, target, property, entity, inverseSide, mergedOptions)

@@ -243,7 +243,7 @@ export class Column<T extends z.ZodType<any>, Generated extends boolean = false>
 export class DefaultColumn<C extends Column<z.ZodType<any>, boolean>> extends Column<z.ZodDefault<C['zod']>> {
 
   constructor(
-    base: C, value: z.output<C['zod']> | (() => z.util.NoUndefined<z.output<C['zod']>>)
+    base: C, value: z.output<C['zod']> | (() => z.util.NoUndefined<z.output<C['zod']>>),
   ) {
     super(base.zod.default(value), base.options)
     this._base = base
