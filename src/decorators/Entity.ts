@@ -1,11 +1,17 @@
 import { snakeCase } from 'lodash'
-import { BeforeInsert, BeforeUpdate, Entity as typeorm_Entity, EntityOptions } from 'typeorm'
+import {
+  AfterLoad,
+  BeforeInsert,
+  BeforeUpdate,
+  Entity as typeorm_Entity,
+  EntityOptions,
+} from 'typeorm'
 
 import config from '../config'
 import { Schema } from '../schema'
 import { symbols } from '../symbols'
 import { registerEntityTableName } from '../util'
-import { validateInsert, validateUpdate } from '../validate'
+import { applyDefaults, validateInsert, validateUpdate } from '../validate'
 import { EntitySchema } from './EntitySchema'
 
 export function Entity(name: string, schema: Schema<any, any>, options?: EntityOptions): ClassDecorator
@@ -33,11 +39,20 @@ export function Entity(...args: any[]): ClassDecorator {
       typeorm_Entity(options)(target)
     }
 
+    // Whenever loading from the database, insert defaults if not found in the database.
+    AfterLoad()(target.prototype, symbols.insertDefaults)
+
     if (config.useHooksForValidation) {
       // Use BeforeInsert and BeforeUpdate to run validation.
       BeforeInsert()(target.prototype, symbols.validateInsert)
       BeforeUpdate()(target.prototype, symbols.validateUpdate)
     }
+
+    Object.defineProperty(target.prototype, symbols.insertDefaults, {
+      value: function () {
+        applyDefaults(this, false) 
+      },
+    })
 
     Object.defineProperty(target.prototype, symbols.validateInsert, {
       value: async function () {

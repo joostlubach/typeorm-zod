@@ -50,13 +50,14 @@ export async function validateUpdate(entity: object) {
   }
 }
 
-export function applyDefaults(entity: object) {
+export function applyDefaults(entity: object, overwrite: boolean = false) {
   const schema = collectSchema(entity.constructor as AnyConstructor)
 
   for (const [key, column] of Object.entries(schema.columns)) {
-    if (column.zod instanceof z.ZodDefault) {
-      Object.assign(entity, {[key]: column.zod.def.defaultValue})
-    }
+    if (!(column.zod instanceof z.ZodDefault)) { continue }
+    if (!overwrite && (entity as any)[key] != null) { continue }
+      
+    Object.assign(entity, {[key]: column.zod.def.defaultValue})
   }
 }
 

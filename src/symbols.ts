@@ -10,6 +10,9 @@ export const symbols = {
   // Attached to the Entity prototype
   // -------
 
+  /** Holds the function that inserts defaults after loading an entity from the DB. */
+  insertDefaults: 'typeorm-zod.insert-defaults' as const,
+
   /** Holds the function that validates an insert operation. */
   validateInsert: 'typeorm-zod.validate-insert' as const,
 
