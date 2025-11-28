@@ -171,13 +171,13 @@ export class Column<T extends z.ZodType<any>, Generated extends boolean = false>
    * ORM model. It can however be applied to inner types: `tz.string(z.email().transform(...))`.
    * TODO: figure out if we want to support this.
    */
-  public transform<Raw>(transformer: ColumnTransformer<z.output<T>, Raw>) {
+  public transform<U>(transformer: ColumnTransformer<U, z.output<T>>): Column<z.ZodType<U>> {
     const copy = this.clone()
     copy.options.transformer = {
-      from: raw => raw == null ? null : transformer.from(raw),
-      to:   value => value == null ? null : transformer.to(value),
+      to:   raw => raw == null ? null : transformer.from(raw),
+      from: value => value == null ? null : transformer.to(value),
     }
-    return copy
+    return copy as Column<z.ZodType<U>>
   }
 
   // #endregion
@@ -355,6 +355,6 @@ export interface UniqueOptions {
 }
 
 export interface ColumnTransformer<T, Raw> {
-  to: (value: T) => Raw
-  from: (raw: Raw) => T
+  to: (raw: Raw) => T
+  from: (value: T) => Raw
 }
