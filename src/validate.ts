@@ -4,14 +4,14 @@ import { z } from 'zod'
 import { ZodValidationError } from './ZodValidationError'
 import { ForeignKeyColumn } from './columns'
 import { Schema } from './schema'
-import { collectSchema, updateSchema } from './schemas'
+import { collectSchema, insertSchema, updateSchema } from './schemas'
 
 export async function validateInsert(entity: object) {
   const schema = collectSchema(entity.constructor as AnyConstructor)
   assignForeignKeys(entity, schema)
 
   const validatePass = async () => {
-    const result = await updateSchema(schema).safeParseAsync(entity, {
+    const result = await insertSchema(schema).safeParseAsync(entity, {
       reportInput: true,
     })
     if (result.success) {
