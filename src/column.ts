@@ -268,7 +268,7 @@ export class DefaultColumn<C extends Column<z.ZodType<any>, boolean>> extends Co
   public unique(options?: UniqueOptions): this
   public unique(name: string, options?: UniqueOptions): this
   public unique(...args: any[]): this {
-    this._base = this._base.index(...args)
+    this._base = this._base.unique(...args)
     return this
   }
 
@@ -310,7 +310,7 @@ export class NullableColumn<C extends Column<z.ZodType<any>, boolean>> extends C
   public unique(options?: UniqueOptions): this
   public unique(name: string, options?: UniqueOptions): this
   public unique(...args: any[]): this {
-    this._base = this._base.index(...args)
+    this._base = this._base.unique(...args)
     return this
   }
 
