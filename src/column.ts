@@ -125,8 +125,8 @@ export class Column<T extends z.ZodType<any>, Generated extends boolean = false>
 
   // #region Index & unique
 
-  private _index: [string | undefined, IndexOptions] | false | null = null
-  private _unique: [string | undefined, UniqueOptions] | null = null
+  protected _index: [string | undefined, IndexOptions] | false | null = null
+  protected _unique: [string | undefined, UniqueOptions] | null = null
 
   public get uniqueOptions() {
     return this._unique?.[1] ?? null
@@ -210,7 +210,7 @@ export class Column<T extends z.ZodType<any>, Generated extends boolean = false>
     if (!forceUnlessDisabled && this._index == null) { return null }
 
     const [
-      name = config.indexNaming?.(tableName, field, false),
+      name = config.indexNaming?.(tableName, [field], false),
       options,
     ] = this._index ?? []
 
@@ -223,14 +223,16 @@ export class Column<T extends z.ZodType<any>, Generated extends boolean = false>
     }
   }
 
-  public buildUniqueDecorator(tableName: string, field: string): ClassDecorator | null {
+  public buildUniqueDecorator(tableName: string, field: string | string[]): ClassDecorator | null {
     if (this._unique == null) { return null }
 
     const [
-      name = config.indexNaming?.(tableName, field, true),
+      name = config.indexNaming?.(tableName, wrapArray(field), true),
       options,
     ] = this._unique
-    const fields = options.scope != null ? [...wrapArray(options.scope), field] : [field]
+    const fields = options.scope != null
+      ? [...wrapArray(options.scope), ...wrapArray(field)]
+      : wrapArray(field)
 
     return (target: Function) => {
       if (name == null) {

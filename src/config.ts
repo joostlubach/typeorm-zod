@@ -36,11 +36,11 @@ export namespace ForeignKeyConstraintNaming {
   export const SNAKE = (tableName: string, field: string) => `FK_${snakeize(tableName)}_${snakeize(field)}`
 }
 
-export type IndexNaming = (tableName: string, field: string, unique: boolean) => string
+export type IndexNaming = (tableName: string, fields: string[], unique: boolean) => string
 
 export namespace IndexNaming {
-  export const CAMEL = (tableName: string, field: string, unique: boolean) => `${unique ? 'UQ' : 'IDX'}_${camelize(tableName)}_${camelize(field)}`
-  export const SNAKE = (tableName: string, field: string, unique: boolean) => `${unique ? 'UQ' : 'IDX'}_${snakeize(tableName)}_${snakeize(field)}`
+  export const CAMEL = (tableName: string, fields: string[], unique: boolean) => `${unique ? 'UQ' : 'IDX'}_${camelize(tableName)}_${camelize(fields.join('_'))}`
+  export const SNAKE = (tableName: string, fields: string[], unique: boolean) => `${unique ? 'UQ' : 'IDX'}_${snakeize(tableName)}_${snakeize(fields.join('_'))}`
 }
 
 export interface Typemap {

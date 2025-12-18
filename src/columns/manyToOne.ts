@@ -1,3 +1,4 @@
+import { isArray } from 'lodash'
 import {
   Column as typeorm_Column,
   JoinColumn,
@@ -13,25 +14,40 @@ import { Column, ColumnOptions } from '../column'
 import config from '../config'
 import { FieldType } from '../types'
 import { getTypeORMTableName, invokePropertyDecorator } from '../util'
+import { PolymorphicManyToOneColumn } from './polymorphicManyToOne'
 
 // #region manyToOne
 
-export function manyToOne<E extends object>(
+function manyToOne_mono<E extends object>(
   entity: ((type?: any) => Constructor<E>) | string,
   inverseSide?: string | ((object: E) => any),
   options?: RelationOptions
 ): ManyToOneColumn<E>
-export function manyToOne<E extends object>(
+function manyToOne_mono<E extends object>(
   entity: ((type?: any) => Constructor<E>) | string,
   options?: RelationOptions
 ): ManyToOneColumn<E>
-export function manyToOne(...args: any[]): ManyToOneColumn<z.ZodType<any | undefined>> {
+function manyToOne_mono(...args: any[]) {
   const entity = args.shift()
   const inverseSide = typeof args[0] === 'string' || isFunction(args[0]) ? args.shift() : undefined
   const options: RelationOptions = args.shift() ?? {}
 
-  return new ManyToOneColumn(entity, inverseSide, options)
+  if (isArray(entity)) {
+    return new PolymorphicManyToOneColumn(entity, options)
+  } else {
+    return new ManyToOneColumn(entity, inverseSide, options)
+  }
 }
+
+function manyToOne_poly<E extends object[]>(
+  entities: string[] | ((type?: any) => {[K in keyof E]: ObjectType<E[K]>}),
+  options?: RelationOptions
+): PolymorphicManyToOneColumn<E[number]> {
+  return new PolymorphicManyToOneColumn(entities, options)
+}
+
+export const manyToOne = manyToOne_mono as typeof manyToOne_mono & {poly: typeof manyToOne_poly}
+Object.assign(manyToOne, {poly: manyToOne_poly})
 
 export class ManyToOneColumn<E extends object> extends Column<z.ZodType<E | undefined>> {
 
@@ -113,12 +129,6 @@ export class ForeignKeyColumn<T extends z.ZodType<any>> extends Column<T> {
     }
   }
 
-}
-
-export interface ForeignKeyOptions {
-  relationName: string
-  nullable?: boolean
-  options?: Omit<JoinColumnOptions, 'name'>
 }
 
 // #endregion
