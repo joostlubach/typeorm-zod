@@ -1,7 +1,7 @@
-import { isPlainObject } from 'ytil'
+import { cleanTextValue } from 'ytil'
 import { z } from 'zod'
 
-import { Column, ColumnOptions, ColumnType } from '../column'
+import { Column, ColumnOptions, ColumnType, NullableColumn } from '../column'
 import config from '../config'
 
 export function string<T extends z.ZodString>(base: T, type?: ColumnType, options?: ColumnOptions): StringColumn<T>
@@ -22,23 +22,13 @@ export function string(...args: any[]): StringColumn<z.ZodString> | Column<z.Zod
 
 export class StringColumn<T extends z.ZodString = z.ZodString> extends Column<T> {
 
-  constructor(base: T, typeOrOptions?: ColumnType | ColumnOptions) {
-    // We add a minimum length of 1 to string columns by default, unless they are optional or nullable.
-    // This is set back to 0 when calling `.optional()` or `.nullable()`.
-    if (!(isPlainObject<ColumnOptions>(typeOrOptions) && typeOrOptions.nullable)) {
-      base = base.min(1)
-    }
-    super(base, typeOrOptions)
-  }
-
   public optional() {
-    const superOptional = super.optional
-    return superOptional.call(this.modify(z => z.min(0)))
+    return this.nullable().default(null)
   }
 
-  public nullable() {
-    const superNullable = super.nullable
-    return superNullable.call(this.modify(z => z.min(0)))
+  public nullable(): NullableColumn<this> {
+    const modified = this.modify(z => z.transform(it => cleanTextValue(it, true)) as any)
+    return super.nullable.call(modified)
   }
 
   public min(minLength: number) {
