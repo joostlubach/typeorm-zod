@@ -1,7 +1,6 @@
 import { JoinColumn, ObjectType, OneToOne, RelationOptions } from 'typeorm'
 import { Constructor, isFunction } from 'ytil'
 import { z } from 'zod'
-
 import { Column, ColumnOptions } from '../column'
 import config from '../config'
 import { FieldType } from '../types'
@@ -36,9 +35,25 @@ export class OneToOneColumn<E extends object> extends Column<z.ZodType<E | undef
     super(z.object() as z.ZodType<E>, {})
   }
 
-  protected readonly foreignKey?: string
-  protected readonly referencedColumnName?: string
-  protected readonly foreignKeyConstraintName?: string
+  protected _foreignKey?: string
+  protected _referencedColumnName?: string
+  protected _foreignKeyConstraintName?: string
+
+  public useId() {
+    this._foreignKey = 'id'
+    this._referencedColumnName = 'id'
+    return this
+  }
+
+  public foreignKey(foreignKey: string) {
+    this._foreignKey = foreignKey
+    return this
+  }
+
+  public referencedColumnName(referencedColumnName: string) {
+    this._referencedColumnName = referencedColumnName
+    return this
+  }
 
   public cascade() {
     this.options.onDelete = 'CASCADE'
@@ -57,9 +72,9 @@ export class OneToOneColumn<E extends object> extends Column<z.ZodType<E | undef
       const {entity, inverseSide} = column
 
       const tableName = getTypeORMTableName(target.constructor)
-      const foreignKey = column.foreignKey ?? config.foreignKeyNaming(field)
-      const referencedColumnName = column.referencedColumnName
-      const foreignKeyConstraintName = column.foreignKeyConstraintName ?? config.foreignKeyConstraintNaming?.(tableName, field)
+      const foreignKey = column._foreignKey ?? config.foreignKeyNaming(field)
+      const referencedColumnName = column._referencedColumnName
+      const foreignKeyConstraintName = column._foreignKeyConstraintName ?? config.foreignKeyConstraintNaming?.(tableName, field)
 
       invokePropertyDecorator(OneToOne, target, property, entity, inverseSide, {
         ...column.options,
