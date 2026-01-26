@@ -38,10 +38,16 @@ export class OneToOneColumn<E extends object> extends Column<z.ZodType<E | undef
   protected _foreignKey?: string
   protected _referencedColumnName?: string
   protected _foreignKeyConstraintName?: string
+  protected _slave: boolean = false
 
   public useId() {
     this._foreignKey = 'id'
     this._referencedColumnName = 'id'
+    return this
+  }
+
+  public slave() {
+    this._slave = true
     return this
   }
 
@@ -81,14 +87,16 @@ export class OneToOneColumn<E extends object> extends Column<z.ZodType<E | undef
         nullable: options.nullable,
       })
 
-      invokePropertyDecorator(JoinColumn, target, property, {
-        name: foreignKey,
-        referencedColumnName,
-        foreignKeyConstraintName, 
-      })
+      if (!column._slave) {
+        invokePropertyDecorator(JoinColumn, target, property, {
+          name: foreignKey,
+          referencedColumnName,
+          foreignKeyConstraintName, 
+        })
 
-      const indexDecorator = column.buildIndexDecorator(tableName, field, true)
-      indexDecorator?.(target, property)
+        const indexDecorator = column.buildIndexDecorator(tableName, field, true)
+        indexDecorator?.(target, property)
+      }
     }
   }
 
