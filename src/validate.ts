@@ -1,8 +1,8 @@
 import { AnyConstructor, objectEntries, objectKeys } from 'ytil'
 import { z } from 'zod'
-
 import { ZodValidationError } from './ZodValidationError'
-import { ForeignKeyColumn } from './columns'
+import { DefaultColumn, NullableColumn } from './column'
+import { ForeignKeyColumn, ManyToOneColumn, OneToOneColumn } from './columns'
 import { Schema } from './schema'
 import { collectSchema, insertSchema, updateSchema } from './schemas'
 
@@ -56,6 +56,15 @@ export function applyDefaults(entity: object, overwrite: boolean = false) {
   for (const [key, column] of Object.entries(schema.columns)) {
     if (!(column.zod instanceof z.ZodDefault)) { continue }
     if (!overwrite && (entity as any)[key] != null) { continue }
+
+    // For ToOne columns, also check if the corresponding foreign key is already set.
+    let base = column
+    while (base instanceof DefaultColumn || base instanceof NullableColumn) {
+      base = base.base
+    }
+    if (base instanceof OneToOneColumn || base instanceof ManyToOneColumn) {
+      if ((entity as any)[base.foreignKeyName(key)] != null) { continue }
+    }
       
     Object.assign(entity, {[key]: column.zod.def.defaultValue})
   }

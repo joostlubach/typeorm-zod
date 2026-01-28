@@ -9,7 +9,6 @@ import {
 } from 'typeorm'
 import { Constructor, isFunction } from 'ytil'
 import { z } from 'zod'
-
 import { Column, ColumnOptions } from '../column'
 import config from '../config'
 import { FieldType } from '../types'
@@ -59,9 +58,13 @@ export class ManyToOneColumn<E extends object> extends Column<z.ZodType<E | unde
     super(z.object() as z.ZodType<E>, {})
   }
 
-  protected readonly foreignKey?: string
-  protected readonly referencedColumnName?: string
-  protected readonly foreignKeyConstraintName?: string
+  protected readonly _foreignKeyName?: string
+  protected readonly _referencedColumnName?: string
+  protected readonly _foreignKeyConstraintName?: string
+
+  public foreignKeyName(field: string) {
+    return this._foreignKeyName ?? config.foreignKeyNaming(field)
+  }
 
   public cascade() {
     this.options.onDelete = 'CASCADE'
@@ -80,9 +83,9 @@ export class ManyToOneColumn<E extends object> extends Column<z.ZodType<E | unde
       const {entity, inverseSide} = column
 
       const tableName = getTypeORMTableName(target.constructor)
-      const foreignKey = column.foreignKey ?? config.foreignKeyNaming(field)
-      const referencedColumnName = column.referencedColumnName
-      const foreignKeyConstraintName = column.foreignKeyConstraintName ?? config.foreignKeyConstraintNaming?.(tableName, field)
+      const foreignKey = column._foreignKeyName ?? config.foreignKeyNaming(field)
+      const referencedColumnName = column._referencedColumnName
+      const foreignKeyConstraintName = column._foreignKeyConstraintName ?? config.foreignKeyConstraintNaming?.(tableName, field)
 
       invokePropertyDecorator(ManyToOne, target, property, entity, inverseSide, {
         ...column.options,

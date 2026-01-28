@@ -35,13 +35,17 @@ export class OneToOneColumn<E extends object> extends Column<z.ZodType<E | undef
     super(z.object() as z.ZodType<E>, {})
   }
 
-  protected _foreignKey?: string
+  protected _foreignKeyName?: string
   protected _referencedColumnName?: string
   protected _foreignKeyConstraintName?: string
   protected _slave: boolean = false
 
+  public foreignKeyName(field: string) {
+    return this._foreignKeyName ?? config.foreignKeyNaming(field)
+  }
+
   public useId() {
-    this._foreignKey = 'id'
+    this._foreignKeyName = 'id'
     this._referencedColumnName = 'id'
     return this
   }
@@ -52,7 +56,7 @@ export class OneToOneColumn<E extends object> extends Column<z.ZodType<E | undef
   }
 
   public foreignKey(foreignKey: string) {
-    this._foreignKey = foreignKey
+    this._foreignKeyName = foreignKey
     return this
   }
 
@@ -78,7 +82,7 @@ export class OneToOneColumn<E extends object> extends Column<z.ZodType<E | undef
       const {entity, inverseSide} = column
 
       const tableName = getTypeORMTableName(target.constructor)
-      const foreignKey = column._foreignKey ?? config.foreignKeyNaming(field)
+      const foreignKey = column._foreignKeyName ?? config.foreignKeyNaming(field)
       const referencedColumnName = column._referencedColumnName
       const foreignKeyConstraintName = column._foreignKeyConstraintName ?? config.foreignKeyConstraintNaming?.(tableName, field)
 
