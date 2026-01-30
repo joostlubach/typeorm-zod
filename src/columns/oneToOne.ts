@@ -70,6 +70,11 @@ export class OneToOneColumn<E extends object> extends Column<z.ZodType<E | undef
     this.options.onUpdate = 'CASCADE'
     return this
   }
+
+  public setNull() {
+    this.options.onDelete = 'SET NULL'
+    return this
+  }
     
   public get fieldType() {
     return FieldType.Relation
