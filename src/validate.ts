@@ -5,6 +5,7 @@ import { DefaultColumn, NullableColumn } from './column'
 import { ForeignKeyColumn, ManyToOneColumn, OneToOneColumn } from './columns'
 import { Schema } from './schema'
 import { collectSchema, insertSchema, updateSchema } from './schemas'
+import { ColumnShape } from './types'
 
 export async function validateInsert(entity: object) {
   const schema = collectSchema(entity.constructor as AnyConstructor)
@@ -70,7 +71,7 @@ export function applyDefaults(entity: object, overwrite: boolean = false) {
   }
 }
 
-function applyDerivations(entity: object, schema: Schema<any, any>) {
+function applyDerivations(entity: object, schema: Schema<ColumnShape, any>) {
   for (const [key, derivation] of objectEntries(schema.derivations)) {
     if (derivation != null) {
       Object.assign(entity, {
@@ -80,7 +81,7 @@ function applyDerivations(entity: object, schema: Schema<any, any>) {
   }
 }
 
-function assignForeignKeys(entity: object, schema: Schema<any, any>) {
+function assignForeignKeys(entity: object, schema: Schema<ColumnShape, any>) {
   // Find any foreign key columns, check if there is an associated relationship value and take its ID.
   for (const [key, column] of objectEntries(schema.columns)) {
     if (!(column instanceof ForeignKeyColumn)) { continue }

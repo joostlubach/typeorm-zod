@@ -1,6 +1,5 @@
 import { AnyConstructor, superConstructor } from 'ytil'
 import { z } from 'zod'
-
 import { Schema, schema } from './schema'
 import { symbols } from './symbols'
 import { ColumnShape, Derivations, FieldType } from './types'
@@ -45,12 +44,12 @@ export function updateSchema(schema: Schema<any, any>): z.ZodObject {
   })
 }
 
-export function collectSchema<S extends Schema<any, any>>(target: AnyConstructor & {[symbols.schema]: S}): S
+export function collectSchema<S extends Schema<ColumnShape, any>>(target: AnyConstructor & {[symbols.schema]: S}): S
 export function collectSchema(target: AnyConstructor): Schema<ColumnShape, Derivations<ColumnShape>>
 export function collectSchema(target: AnyConstructor) {
   const superCtor = superConstructor(target)
   const parentSchema = superCtor == null ? undefined : collectSchema(superCtor)
-  const ownSchema = (target as any)[symbols.schema] as Schema<any, any> | undefined
+  const ownSchema = (target as any)[symbols.schema] as Schema<ColumnShape, any> | undefined
   
   if (parentSchema == null && ownSchema != null) {
     return ownSchema
