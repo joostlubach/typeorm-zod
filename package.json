@@ -21,20 +21,19 @@
     "clean": "rimraf dist",
     "lint": "eslint src --ext ts,tsx",
     "check": "tsc -p . --noEmit",
-    "test": "NODE_ENV=test jest"
+    "test": "vitest run"
   },
   "devDependencies": {
-    "@types/jest": "^30.0.0",
     "@types/lodash": "^4.17.20",
     "@types/node": "^24.5.2",
     "@types/pluralize": "^0.0.33",
     "rimraf": "^6.0.1",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^4.0.0"
   },
   "dependencies": {
     "casing": "^1.1.0",
     "chalk": "^3.0.0",
-    "jest": "^30.2.0",
     "lodash": "^4.17.21",
     "pluralize": "^8.0.0",
     "typeorm": "^0.3.26",
