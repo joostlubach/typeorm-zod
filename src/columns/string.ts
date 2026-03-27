@@ -1,11 +1,10 @@
 import { cleanTextValue } from 'ytil'
 import { z } from 'zod'
-
 import { Column, ColumnOptions, ColumnType, NullableColumn } from '../column'
 import config from '../config'
 
 export function string<T extends z.ZodString>(base: T, type?: ColumnType, options?: ColumnOptions): StringColumn<T>
-export function string<T extends z.ZodType<string>>(base: T, type?: ColumnType, options?: ColumnOptions): Column<T>
+export function string<T extends z.ZodType<string>>(base: T, type?: ColumnType, options?: ColumnOptions): StringColumn<T>
 export function string<T extends z.ZodType>(base: T, type?: ColumnType, options?: ColumnOptions): StringColumn<z.ZodString>
 export function string(type?: ColumnType, options?: ColumnOptions): StringColumn<z.ZodString>
 export function string(...args: any[]): StringColumn<z.ZodString> | Column<z.ZodType<string>> {
@@ -13,14 +12,10 @@ export function string(...args: any[]): StringColumn<z.ZodString> | Column<z.Zod
   const type = args.shift() ?? config.typemap.string
   const options = args.shift() ?? {}
 
-  if (base instanceof z.ZodString) {
-    return new StringColumn(base, {type, ...options})
-  } else {
-    return new Column(base, {type, ...options})
-  }
+  return new StringColumn(base, {type, ...options})
 }
 
-export class StringColumn<T extends z.ZodString = z.ZodString> extends Column<T> {
+export class StringColumn<T extends z.ZodType<string> = z.ZodString> extends Column<T> {
 
   public optional() {
     return this.nullable().default(null)
@@ -32,11 +27,11 @@ export class StringColumn<T extends z.ZodString = z.ZodString> extends Column<T>
   }
 
   public min(minLength: number) {
-    return this.modify(z => z.min(minLength))
+    return this.modify(it => it instanceof z.ZodString ? it.min(minLength) : it)
   }
 
   public max(maxLength: number) {
-    const modified = this.modify(z => z.max(maxLength))
+    const modified = this.modify(it => it instanceof z.ZodString ? it.max(maxLength) : it)
     if (typeof modified.options.length === 'number') {
       modified.options.length = Math.min(modified.options.length, maxLength)
     } else {
@@ -50,7 +45,7 @@ export class StringColumn<T extends z.ZodString = z.ZodString> extends Column<T>
   }
 
   public collate(collation: string) {
-    const modified = this.modify(z => z)
+    const modified = this.modify(it => it)
     modified.options.collation = collation
     return modified
   }
