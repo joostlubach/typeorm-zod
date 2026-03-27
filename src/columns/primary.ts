@@ -4,7 +4,6 @@ import {
   PrimaryGeneratedColumn as typeorm_PrimaryGeneratedColumn,
 } from 'typeorm'
 import { z } from 'zod'
-
 import { Column, ColumnOptions } from '../column'
 import config from '../config'
 import { FieldType } from '../types'
@@ -17,7 +16,7 @@ export function primary(
   options: PrimaryColumnOptions = {},
 ): PrimaryColumn<z.ZodType<any>> {
   const zod = type === 'uuid' || type === 'string'
-    ? z.string()
+    ? z.string().length(36)
     : z.int()
 
   return new PrimaryColumn(zod, type, options)
