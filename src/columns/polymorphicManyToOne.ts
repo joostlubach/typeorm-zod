@@ -7,7 +7,6 @@ import {
 } from 'typeorm'
 import { objectEntries } from 'ytil'
 import { z } from 'zod'
-
 import { Column, ColumnOptions } from '../column'
 import config from '../config'
 import { FieldType } from '../types'
@@ -29,12 +28,10 @@ export class PolymorphicManyToOneColumn<E extends object> extends Column<z.ZodTy
   }
 
   public buildFieldDecorator(base: string, options: ColumnOptions = {}) {
-    const column = this
-
     return (target: object, prop: string | symbol) => {
       const fields: Record<string, ColumnOptions> = {
-        [`${base}_type`]: {type: config.typemap.string},
-        [`${base}_id`]: {type: config.typemap.int32},
+        [`${base}_type`]: {type: config.typemap.string, length: 64},
+        [`${base}_id`]: {type: config.typemap.string, length: 36},
       }
 
       for (const [field, options] of objectEntries(fields)) {

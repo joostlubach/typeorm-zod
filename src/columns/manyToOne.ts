@@ -126,7 +126,8 @@ export class ForeignKeyColumn<T extends z.ZodType<any>> extends Column<T> {
   public buildFieldDecorator(_field: string, options: ColumnOptions = {}): PropertyDecorator {
     return (target: object, property: string | symbol) => {
       invokePropertyDecorator(typeorm_Column, target, property, {
-        type: config.typemap.int32,
+        type: config.typemap.string,
+        length: 36,
         ...options,
       })
     }
