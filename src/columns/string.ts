@@ -22,7 +22,7 @@ export class StringColumn<T extends z.ZodType<string> = z.ZodString> extends Col
   }
 
   public nullable(): NullableColumn<this> {
-    const modified = this.modify(z => z.transform(it => cleanTextValue(it, true)) as any)
+    const modified = this.modify(z => z.transform(it => typeof it === 'string' ? cleanTextValue(it, true) : it) as any)
     return super.nullable.call(modified)
   }
 
