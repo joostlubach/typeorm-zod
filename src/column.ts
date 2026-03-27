@@ -10,7 +10,6 @@ import {
 } from 'typeorm'
 import { AnyFunction, Constructor, wrapArray } from 'ytil'
 import { z } from 'zod'
-
 import config from './config'
 import { FieldType } from './types'
 import { getTypeORMTableName, invokeClassDecorator, invokePropertyDecorator } from './util'
@@ -210,7 +209,7 @@ export class Column<T extends z.ZodType<any>, Generated extends boolean = false>
     if (!forceUnlessDisabled && this._index == null) { return null }
 
     const [
-      name = config.indexNaming?.(tableName, [field], false),
+      name = config.indexes.naming?.(tableName, [field], false),
       options,
     ] = this._index ?? []
 
@@ -227,7 +226,7 @@ export class Column<T extends z.ZodType<any>, Generated extends boolean = false>
     if (this._unique == null) { return null }
 
     const [
-      name = config.indexNaming?.(tableName, wrapArray(field), true),
+      name = config.indexes.naming?.(tableName, wrapArray(field), true),
       options,
     ] = this._unique
     const fields = options.scope != null

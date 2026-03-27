@@ -1,6 +1,7 @@
 import { isArray } from 'lodash'
 import {
   Column as typeorm_Column,
+  ColumnType,
   JoinColumn,
   JoinColumnOptions,
   ManyToOne,
@@ -10,7 +11,7 @@ import {
 import { Constructor, isFunction } from 'ytil'
 import { z } from 'zod'
 import { Column, ColumnOptions } from '../column'
-import config from '../config'
+import config, { DefaultForeignKeyType } from '../config'
 import { FieldType } from '../types'
 import { getTypeORMTableName, invokePropertyDecorator } from '../util'
 import { PolymorphicManyToOneColumn } from './polymorphicManyToOne'
@@ -40,7 +41,7 @@ function manyToOne_mono(...args: any[]) {
 
 function manyToOne_poly<E extends object[]>(
   entities: string[] | ((type?: any) => {[K in keyof E]: ObjectType<E[K]>}),
-  options?: RelationOptions
+  options?: RelationOptions,
 ): PolymorphicManyToOneColumn<E[number]> {
   return new PolymorphicManyToOneColumn(entities, options)
 }
@@ -63,7 +64,7 @@ export class ManyToOneColumn<E extends object> extends Column<z.ZodType<E | unde
   protected readonly _foreignKeyConstraintName?: string
 
   public foreignKeyName(field: string) {
-    return this._foreignKeyName ?? config.foreignKeyNaming(field)
+    return this._foreignKeyName ?? config.foreignKeys.naming(field)
   }
 
   public cascade() {
@@ -83,9 +84,9 @@ export class ManyToOneColumn<E extends object> extends Column<z.ZodType<E | unde
       const {entity, inverseSide} = column
 
       const tableName = getTypeORMTableName(target.constructor)
-      const foreignKey = column._foreignKeyName ?? config.foreignKeyNaming(field)
+      const foreignKey = column._foreignKeyName ?? config.foreignKeys.naming(field)
       const referencedColumnName = column._referencedColumnName
-      const foreignKeyConstraintName = column._foreignKeyConstraintName ?? config.foreignKeyConstraintNaming?.(tableName, field)
+      const foreignKeyConstraintName = column._foreignKeyConstraintName ?? config.foreignKeys.constraintNaming?.(tableName, field)
 
       invokePropertyDecorator(ManyToOne, target, property, entity, inverseSide, {
         ...column.options,
@@ -109,25 +110,27 @@ export class ManyToOneColumn<E extends object> extends Column<z.ZodType<E | unde
 
 // #region foreignKey
 
-export function foreignKey<T extends z.ZodType<any>>(type: T, relationName: string, options?: Omit<JoinColumnOptions, 'name'>) {
-  return new ForeignKeyColumn(type, relationName, options)
+export function foreignKey<T extends z.ZodType<any> = DefaultForeignKeyType>(relationName: string, options: ForeignKeyOptions<T> = {}) {
+  return new ForeignKeyColumn(relationName, options)
 }
 
-export class ForeignKeyColumn<T extends z.ZodType<any>> extends Column<T> {
+export class ForeignKeyColumn<T extends z.ZodType<any> = DefaultForeignKeyType> extends Column<T> {
 
   constructor(
-    base: T,
     public readonly relationName: string,
-    public readonly options: Omit<JoinColumnOptions, 'name'> = {},
+    options: ForeignKeyOptions<T> = {},
   ) {
-    super(base, options)
+    const type = (options.type ?? config.foreignKeys.defaultType) as T
+    super(type, {
+      ...options,
+      type: options.db_type ?? config.foreignKeys.defaultDbType,
+    })
   }
 
   public buildFieldDecorator(_field: string, options: ColumnOptions = {}): PropertyDecorator {
     return (target: object, property: string | symbol) => {
       invokePropertyDecorator(typeorm_Column, target, property, {
-        type: config.typemap.string,
-        length: 36,
+        ...config.foreignKeys.defaultDbOptions,
         ...options,
       })
     }
@@ -136,3 +139,8 @@ export class ForeignKeyColumn<T extends z.ZodType<any>> extends Column<T> {
 }
 
 // #endregion
+
+export interface ForeignKeyOptions<T> extends Omit<JoinColumnOptions, 'type' | 'name'> {
+  type?: z.ZodType<T>
+  db_type?: ColumnType
+}

@@ -2,7 +2,6 @@ import { snakeCase } from 'lodash'
 import { JoinColumnOptions, JoinTable, ManyToMany, ObjectType, RelationOptions } from 'typeorm'
 import { Constructor, isFunction } from 'ytil'
 import { z } from 'zod'
-
 import { Column, ColumnOptions } from '../column'
 import config from '../config'
 import { FieldType } from '../types'
@@ -83,13 +82,13 @@ export class ManyToManyColumn<E extends object> extends Column<z.ZodType<E[]>> {
       const joinColumn: JoinColumnOptions = this_joinColumn ?? {
         name:                     `${thisSidePrefix}_id`,
         referencedColumnName:     'id',
-        foreignKeyConstraintName: config.foreignKeyConstraintNaming?.(joinTableName, `${thisSidePrefix}_id`),
+        foreignKeyConstraintName: config.foreignKeys.constraintNaming?.(joinTableName, `${thisSidePrefix}_id`),
       }
 
       const inverseJoinColumn: JoinColumnOptions = this_inverseJoinColumn ?? {
         name:                     `${otherSidePrefix}_id`,
         referencedColumnName:     'id',
-        foreignKeyConstraintName: config.foreignKeyConstraintNaming?.(joinTableName, `${otherSidePrefix}_id`),
+        foreignKeyConstraintName: config.foreignKeys.constraintNaming?.(joinTableName, `${otherSidePrefix}_id`),
       }
 
       invokePropertyDecorator(ManyToMany, target, property, entity, inverseSide, mergedOptions)

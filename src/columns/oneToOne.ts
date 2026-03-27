@@ -41,7 +41,7 @@ export class OneToOneColumn<E extends object> extends Column<z.ZodType<E | undef
   protected _slave: boolean = false
 
   public foreignKeyName(field: string) {
-    return this._foreignKeyName ?? config.foreignKeyNaming(field)
+    return this._foreignKeyName ?? config.foreignKeys.naming(field)
   }
 
   public useId() {
@@ -87,9 +87,9 @@ export class OneToOneColumn<E extends object> extends Column<z.ZodType<E | undef
       const {entity, inverseSide} = column
 
       const tableName = getTypeORMTableName(target.constructor)
-      const foreignKey = column._foreignKeyName ?? config.foreignKeyNaming(field)
+      const foreignKey = column._foreignKeyName ?? config.foreignKeys.naming(field)
       const referencedColumnName = column._referencedColumnName
-      const foreignKeyConstraintName = column._foreignKeyConstraintName ?? config.foreignKeyConstraintNaming?.(tableName, field)
+      const foreignKeyConstraintName = column._foreignKeyConstraintName ?? config.foreignKeys.constraintNaming?.(tableName, field)
 
       invokePropertyDecorator(OneToOne, target, property, entity, inverseSide, {
         ...column.options,

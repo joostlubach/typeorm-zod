@@ -1,13 +1,21 @@
 import { camelize, snakeize } from 'casing'
-import { ColumnType } from 'typeorm'
-import { isFunction } from 'ytil'
-
+import { merge } from 'lodash'
+import { ColumnType, JoinColumnOptions } from 'typeorm'
+import { DeepPartial, isFunction } from 'ytil'
+import { z } from 'zod'
 import * as typemaps from './typemaps'
 
 export interface Config {
-  foreignKeyNaming: ForeignKeyNaming
-  foreignKeyConstraintNaming: ForeignKeyConstraintNaming
-  indexNaming: IndexNaming | null
+  foreignKeys: {
+    defaultType: z.ZodType<any>
+    defaultDbType: ColumnType
+    defaultDbOptions: Partial<JoinColumnOptions>
+    naming: ForeignKeyNaming
+    constraintNaming: ForeignKeyConstraintNaming
+  }
+  indexes: {
+    naming: IndexNaming | null
+  }
 
   typemap: Typemap,
 
@@ -65,9 +73,17 @@ export interface LoggerInterface {
 }
 
 const config: Config = {
-  foreignKeyNaming:           ForeignKeyNaming.SNAKE,
-  foreignKeyConstraintNaming: ForeignKeyConstraintNaming.SNAKE,
-  indexNaming:                null,
+  foreignKeys: {
+    defaultType:      z.number(),
+    defaultDbType:    'int',
+    naming:           ForeignKeyNaming.SNAKE,
+    constraintNaming: ForeignKeyConstraintNaming.SNAKE,
+    defaultDbOptions: {},
+  },
+
+  indexes: {
+    naming: null,
+  },
 
   typemap: typemaps.abstract,
 
@@ -81,12 +97,14 @@ const config: Config = {
   trace:                 process.env.TYPEORM_ZOD_TRACE === '1' ? true : (process.env.TYPEORM_ZOD_TRACE ?? false),
 }
 
+export type DefaultForeignKeyType = z.ZodNumber
+
 export default config
 
-export function configure(cfg: Partial<Config> | ((cfg: Config) => void)) {
+export function configure(cfg: DeepPartial<Config> | ((cfg: Config) => void)) {
   if (isFunction(cfg)) {
     cfg(config)
   } else {
-    Object.assign(config, cfg)
+    merge(config, cfg)
   }
 }

@@ -31,7 +31,7 @@ export class PolymorphicManyToOneColumn<E extends object> extends Column<z.ZodTy
     return (target: object, prop: string | symbol) => {
       const fields: Record<string, ColumnOptions> = {
         [`${base}_type`]: {type: config.typemap.string, length: 64},
-        [`${base}_id`]: {type: config.typemap.string, length: 36},
+        [`${base}_id`]:   {type: config.typemap.string, length: 36},
       }
 
       for (const [field, options] of objectEntries(fields)) {
@@ -53,7 +53,7 @@ export class PolymorphicManyToOneColumn<E extends object> extends Column<z.ZodTy
       const tableName = getTypeORMTableName(target.constructor)
 
       const [
-        name = config.indexNaming?.(tableName, [base], false),
+        name = config.indexes.naming?.(tableName, [base], false),
         options,
       ] = column._index ?? []
 
