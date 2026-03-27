@@ -1,15 +1,16 @@
 import { camelize, snakeize } from 'casing'
 import { merge } from 'lodash'
-import { ColumnType, JoinColumnOptions } from 'typeorm'
+import { ColumnOptions, ColumnType } from 'typeorm'
 import { DeepPartial, isFunction } from 'ytil'
 import { z } from 'zod'
+import { foreignKey } from './columns/manyToOne'
 import * as typemaps from './typemaps'
 
 export interface Config {
   foreignKeys: {
     defaultType: z.ZodType<any>
     defaultDbType: ColumnType
-    defaultDbOptions: Partial<JoinColumnOptions>
+    defaultDbOptions: Partial<ColumnOptions>
     naming: ForeignKeyNaming
     constraintNaming: ForeignKeyConstraintNaming
   }
@@ -97,7 +98,16 @@ const config: Config = {
   trace:                 process.env.TYPEORM_ZOD_TRACE === '1' ? true : (process.env.TYPEORM_ZOD_TRACE ?? false),
 }
 
-export type DefaultForeignKeyType = z.ZodNumber
+declare global {
+  namespace TypeormZod {
+    interface DefaultTypes {}
+  }
+}
+
+export type DefaultForeignKeyType =
+  TypeormZod.DefaultTypes extends { foreignKey: infer T extends z.ZodType<any> }
+    ? T
+    : z.ZodNumber
 
 export default config
 
