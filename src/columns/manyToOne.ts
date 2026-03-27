@@ -110,7 +110,7 @@ export class ManyToOneColumn<E extends object> extends Column<z.ZodType<E | unde
 
 // #region foreignKey
 
-export function foreignKey<T extends z.ZodType<any> = DefaultForeignKeyType>(relationName: string, options: ForeignKeyOptions<T> = {}) {
+export function foreignKey<T extends z.ZodType<any> = DefaultForeignKeyType>(relationName: string, options: ForeignKeyOptions<T> = {}): ForeignKeyColumn<NoInfer<T>> {
   return new ForeignKeyColumn(relationName, options)
 }
 

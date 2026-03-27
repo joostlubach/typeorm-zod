@@ -1,5 +1,4 @@
 import { z } from 'zod'
-
 import { Column } from './column'
 import { Schema } from './schema'
 
