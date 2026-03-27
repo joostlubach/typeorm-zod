@@ -131,6 +131,7 @@ export class ForeignKeyColumn<T extends z.ZodType<any> = DefaultForeignKeyType> 
     return (target: object, property: string | symbol) => {
       invokePropertyDecorator(typeorm_Column, target, property, {
         ...config.foreignKeys.defaultDbOptions,
+        ...this.options,
         ...options,
       })
     }
