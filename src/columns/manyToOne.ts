@@ -71,6 +71,11 @@ export class ManyToOneColumn<E extends object> extends Column<z.ZodType<E | unde
     throw new Error('Relation columns cannot be defaulted. Use nullable() instead.')
   }
 
+  public setNull() {
+    this.options.onDelete = 'SET NULL'
+    return this
+  }
+
   public cascade() {
     this.options.onDelete = 'CASCADE'
     this.options.onUpdate = 'CASCADE'
