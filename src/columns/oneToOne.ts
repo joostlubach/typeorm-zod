@@ -1,7 +1,7 @@
 import { JoinColumn, ObjectType, OneToOne, RelationOptions } from 'typeorm'
 import { Constructor, isFunction } from 'ytil'
 import { z } from 'zod'
-import { Column, ColumnOptions } from '../column'
+import { Column, ColumnOptions, DefaultColumn, NullableColumn } from '../column'
 import config from '../config'
 import { FieldType } from '../types'
 import { getTypeORMTableName, invokePropertyDecorator } from '../util'
@@ -42,6 +42,10 @@ export class OneToOneColumn<E extends object> extends Column<z.ZodType<E | undef
 
   public foreignKeyName(field: string) {
     return this._foreignKeyName ?? config.foreignKeys.naming(field)
+  }
+
+  public optional(): DefaultColumn<NullableColumn<this>> {
+    throw new Error('Relation columns cannot be defaulted. Use nullable() instead.')
   }
 
   public useId() {

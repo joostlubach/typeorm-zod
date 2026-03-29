@@ -10,7 +10,7 @@ import {
 } from 'typeorm'
 import { Constructor, isFunction } from 'ytil'
 import { z } from 'zod'
-import { Column, ColumnOptions } from '../column'
+import { Column, ColumnOptions, DefaultColumn, NullableColumn } from '../column'
 import config, { DefaultForeignKeyType } from '../config'
 import { FieldType } from '../types'
 import { getTypeORMTableName, invokePropertyDecorator } from '../util'
@@ -65,6 +65,10 @@ export class ManyToOneColumn<E extends object> extends Column<z.ZodType<E | unde
 
   public foreignKeyName(field: string) {
     return this._foreignKeyName ?? config.foreignKeys.naming(field)
+  }
+
+  public optional(): DefaultColumn<NullableColumn<this>> {
+    throw new Error('Relation columns cannot be defaulted. Use nullable() instead.')
   }
 
   public cascade() {

@@ -1,8 +1,7 @@
 import { ObjectType, OneToMany, RelationOptions } from 'typeorm'
 import { Constructor, isFunction } from 'ytil'
 import { z } from 'zod'
-
-import { Column, ColumnOptions } from '../column'
+import { Column, ColumnOptions, DefaultColumn, NullableColumn } from '../column'
 import { FieldType } from '../types'
 import { invokePropertyDecorator } from '../util'
 
@@ -35,6 +34,10 @@ export class OneToManyColumn<E extends object> extends Column<z.ZodType<E[]>> {
 
   public get fieldType() {
     return FieldType.Relation
+  }
+
+  public optional(): DefaultColumn<NullableColumn<this>> {
+    throw new Error('Relation columns cannot be defaulted. Use nullable() instead.')
   }
 
   public buildFieldDecorator(_field: string, options: ColumnOptions = {}) {
