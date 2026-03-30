@@ -1,7 +1,6 @@
 import { isArray } from 'lodash'
 import { AnyEnumType, EnumUtil } from 'ytil'
 import { z } from 'zod'
-
 import { Column } from '../column'
 import config from '../config'
 
@@ -9,7 +8,7 @@ function _enum<const T extends readonly string[]>(values: T, options?: EnumOptio
 function _enum<const T extends AnyEnumType>(entries: T, options?: EnumOptions): Column<z.ZodEnum<T>>
 function _enum(values: any, options: EnumOptions = {}): Column<z.ZodEnum> {
   const {
-    as = 'enum',
+    as = 'string',
     ...params
   } = options
 
@@ -24,7 +23,7 @@ function _enum(values: any, options: EnumOptions = {}): Column<z.ZodEnum> {
   } else {
     return new Column(zod, {
       type:   config.typemap.string,
-      length: Math.max(...resolvedValues.map(it => it.length)),
+      length: Math.ceil(Math.max(...resolvedValues.map(it => it.length)) * 2),
     })
   }
 }
