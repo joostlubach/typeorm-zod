@@ -7,12 +7,12 @@ import { Schema } from './schema'
 import { collectSchema, insertSchema, updateSchema } from './schemas'
 import { ColumnShape } from './types'
 
-export async function validateInsert(entity: object) {
+export async function validateInsert(entity: object, catchall: boolean = false) {
   const schema = collectSchema(entity.constructor as AnyConstructor)
   assignForeignKeys(entity, schema)
 
   const validatePass = async () => {
-    const result = await insertSchema(schema).safeParseAsync(entity, {
+    const result = await insertSchema(schema, catchall).safeParseAsync(entity, {
       reportInput: true,
     })
     if (result.success) {
@@ -29,12 +29,12 @@ export async function validateInsert(entity: object) {
   }
 }
 
-export async function validateUpdate(entity: object) {
+export async function validateUpdate(entity: object, catchall: boolean = false) {
   const schema = collectSchema(entity.constructor as AnyConstructor)
   assignForeignKeys(entity, schema)
 
   const validatePass = async () => {
-    const result = await updateSchema(schema).safeParseAsync(entity, {
+    const result = await updateSchema(schema, catchall).safeParseAsync(entity, {
       reportInput: true,
     })
     if (result.success) {

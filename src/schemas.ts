@@ -10,7 +10,7 @@ import { ColumnShape, Derivations, FieldType } from './types'
  * - Generated fields are allowed but made optional.
  * - Relations are omitted.
  */
-export function insertSchema(schema: Schema<any, any>): z.ZodObject {
+export function insertSchema(schema: Schema<any, any>, catchall: boolean = false): z.ZodObject {
   return schema.resolve((column, key) => {
     if (column.isReadOnly) { return null }
     if (key in schema.derivations) { return null }
@@ -20,7 +20,7 @@ export function insertSchema(schema: Schema<any, any>): z.ZodObject {
     case FieldType.Generated: return column.zod.optional()
     case FieldType.Column: return column.zod
     }
-  })
+  }, catchall)
 }
 
 /**
@@ -31,7 +31,7 @@ export function insertSchema(schema: Schema<any, any>): z.ZodObject {
  * - Contrary to what might make sense, regular columns are not made optional. This is because
  *   the full entity is validated, not only the updates.
  */
-export function updateSchema(schema: Schema<any, any>): z.ZodObject {
+export function updateSchema(schema: Schema<any, any>, catchall: boolean = false): z.ZodObject {
   return schema.resolve((column, key) => {
     if (column.isReadOnly) { return null }
     if (key in schema.derivations) { return null }
@@ -41,7 +41,7 @@ export function updateSchema(schema: Schema<any, any>): z.ZodObject {
     case FieldType.Generated: return null
     case FieldType.Column: return column.zod
     }
-  })
+  }, catchall)
 }
 
 export function collectSchema<S extends Schema<ColumnShape, any>>(target: AnyConstructor & {[symbols.schema]: S}): S
