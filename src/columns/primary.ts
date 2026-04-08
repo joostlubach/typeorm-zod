@@ -19,6 +19,10 @@ export function primary(
     ? z.string().length(36)
     : z.int()
 
+  if (type === 'uuid') {
+    options.length ??= 36
+  }
+
   return new PrimaryColumn(zod, type, options)
 }
 
