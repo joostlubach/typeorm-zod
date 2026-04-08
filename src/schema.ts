@@ -60,18 +60,14 @@ export class Schema<S extends ColumnShape, D extends Derivations<S> = EmptyObjec
     return this
   }
 
-  public resolve(buildType: (column: Column<z.ZodType<any>, boolean>, key: keyof columnsOf<this>) => z.ZodType | null, catchall: boolean = false): z.ZodObject {
+  public resolve(buildType: (column: Column<z.ZodType<any>, boolean>, key: keyof columnsOf<this>) => z.ZodType | null): z.ZodObject {
     const shape: Record<any, z.ZodType> = {}
 
     for (const [key, column] of objectEntries(this.columns)) {
       const type = buildType(column, key)
       if (type == null) { continue }
 
-      if (catchall) {
-        shape[key] = type.catch(undefined)
-      } else {
-        shape[key] = type
-      }
+      shape[key] = type
     }
     
     // Build a new schema.
