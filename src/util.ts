@@ -1,7 +1,6 @@
-import chalk from 'chalk'
+import chalk from 'chalk-template'
 import { snakeCase } from 'lodash'
 import { getMetadataArgsStorage, ObjectType } from 'typeorm'
-
 import config from './config'
 
 // Store entity table names for cases where metadata isn't available yet
