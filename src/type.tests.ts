@@ -1,6 +1,5 @@
 import { FindOptionsWhere } from 'typeorm'
 import { z } from 'zod'
-
 import {
   boolean,
   create_timestamp,
@@ -136,7 +135,6 @@ user1.email = 'alice@example.com'
 user1.id = '5'
 // @ts-expect-error
 user1.email = 100
-// @ts-expect-error
 user1.active = true
 
 // Check 4 - FindOptionsWhere
