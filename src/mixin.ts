@@ -38,7 +38,7 @@ export type Mixin<S extends Schema<any, any>, Base extends AnyConstructor> = (
     & (
       new (...args: ConstructorParams<Base>) => (
         // We're returning the constructor unchanged, so it should keep its default behavior.
-        & FixtureRecipeOf<Base>
+        & InstanceType<Base>
 
         // Mixin all attributes of the schema.
         & schemaAttributes<{[symbols.schema]: S}>
