@@ -1,7 +1,6 @@
 import { AnyConstructor, ConstructorParams } from 'ytil'
 import { z } from 'zod'
-
-import { schema, Schema, schemaAttributes } from './schema'
+import { Schema, schemaAttributes } from './schema'
 import { symbols } from './symbols'
 
 export function mixin<S extends Schema<any, any>, Ctor extends AnyConstructor>(schema: S, Base: Ctor): Mixin<typeof schema, Ctor>
@@ -39,7 +38,7 @@ export type Mixin<S extends Schema<any, any>, Base extends AnyConstructor> = (
     & (
       new (...args: ConstructorParams<Base>) => (
         // We're returning the constructor unchanged, so it should keep its default behavior.
-        & InstanceType<Base>
+        & FixtureRecipeOf<Base>
 
         // Mixin all attributes of the schema.
         & schemaAttributes<{[symbols.schema]: S}>
