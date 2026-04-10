@@ -125,17 +125,20 @@ export type schemaOf<T> =
 /**
  * Retrieves the attributes of any instance of entities created with the given schema.
  * 
+ * - Derived columns are marked as readonly here.
  * - Generated columns are marked as readonly here.
  */
 export type schemaAttributes<T> = schemaOf<T> extends never ? {
   [K in keyof T]: T[K]
 } : {
   [K in keyof schemaOf<T>['columns'] as (
+    K extends keyof derivationsOf<schemaOf<T>> ? never :
     schemaOf<T>['columns'][K]['fieldType'] extends FieldType.Generated ? never :
     K
   )]: output<schemaOf<T>>[K]
 } & {
   readonly [K in keyof schemaOf<T>['columns'] as (
+    K extends keyof derivationsOf<schemaOf<T>> ? K :
     schemaOf<T>['columns'][K]['fieldType'] extends FieldType.Generated ? K :
     never
   )]: output<schemaOf<T>>[K]
