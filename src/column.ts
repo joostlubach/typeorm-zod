@@ -335,12 +335,13 @@ export type ColumnOptions = typeorm_ColumnOptions
 export function modifier<C extends Column<any, any>, K extends keyof C['zod']>(
   target: () => C['zod'],
   key: K,
-): ColumnModifier<C['zod'][K]> {
+): ColumnModifier<C, C['zod'][K]> {
   return function (this: Column<z.ZodType<any>, boolean>, ...args: any[]) {
     const tgt = target()
     const method = tgt[key] as AnyFunction
     const retval = method.call(tgt, ...args)
     if (retval === this.zod) { return this }
+
     if (retval instanceof z.ZodType) {
       return this.modify(() => retval)
     } else {
@@ -349,7 +350,7 @@ export function modifier<C extends Column<any, any>, K extends keyof C['zod']>(
   }
 }
 
-type ColumnModifier<F extends (...args: any[]) => z.ZodType<any>> = (...args: Parameters<F>) => Column<ReturnType<F>>
+type ColumnModifier<C extends Column<any, any>, F extends (...args: any[]) => z.ZodType<any>> = (...args: Parameters<F>) => C
 
 export interface UniqueOptions {
   scope?: string | string[]
