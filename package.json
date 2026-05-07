@@ -23,6 +23,9 @@
     "check": "tsc -p . --noEmit",
     "test": "vitest run"
   },
+  "peerDependencies": {
+    "typeorm": ">=0.3"
+  },
   "devDependencies": {
     "@types/lodash": "^4.17.20",
     "@types/node": "^24.5.2",
@@ -36,7 +39,6 @@
     "chalk-template": "^1.1.2",
     "lodash": "^4.17.21",
     "pluralize": "^8.0.0",
-    "typeorm": "^0.3.26",
     "ytil": "workspace:^",
     "zod": "^4.1.5"
   }
