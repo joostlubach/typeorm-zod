@@ -173,8 +173,8 @@ export class Column<T extends z.ZodType<any>, Generated extends boolean = false>
   public transform<U>(transformer: ColumnTransformer<U, z.output<T>>): Column<z.ZodType<U>> {
     const copy = this.clone()
     copy.options.transformer = {
-      to:   raw => raw == null ? null : transformer.from(raw),
-      from: value => value == null ? null : transformer.to(value),
+      to:   value => value == null ? null : transformer.to(value),
+      from: raw => raw == null ? null : transformer.from(raw),
     }
     return copy as Column<z.ZodType<U>>
   }
@@ -357,6 +357,6 @@ export interface UniqueOptions {
 }
 
 export interface ColumnTransformer<T, Raw> {
-  to: (raw: Raw) => T
-  from: (value: T) => Raw
+  from: (raw: Raw) => T
+  to: (value: T) => Raw
 }
